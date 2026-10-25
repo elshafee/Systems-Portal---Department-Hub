@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}User Management — {{ SYSTEM_OFFICE_CODE }}{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block page_subtitle %}Manage roles and access to the system{% endblock %}
+
+{% block content %}
+<div class="card-custom">
+  <div class="card-header-custom">
+    <div class="icon-wrap"><i class="bi bi-people"></i></div>
+    <div style="flex: 1;">
+      <h2>Registered Users</h2>
+      <p>All users that have logged into the system</p>
+    </div>
+    <button type="button" class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addUserModal">
+      <i class="bi bi-person-plus"></i> Add User
+    </button>
+  </div>
+
+  {% if users %}
+  <div style="overflow-x:auto;">
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email Address</th>
+          <th>Role</th>
+          <th>Department Access</th>
+          <th>Joined</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td style="font-weight:600;color:var(--brand-navy);">
+            {{ user.name }}
+          </td>
+          <td style="font-size:13px;color:#6b7a8f;">
+            {{ user.email }}
+          </td>
+          <td>
+            {% if user.role == 'admin' %}
+              <span class="badge" style="background:#e8f1fb;color:#1a5fa8;">Admin</span>
+            {% else %}
+              <span class="badge" style="background:#f5e8fb;color:#7b2d8b;">User</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if user.role == 'admin' %}
+              <span class="badge" style="background:#e8f1fb;color:#1a5fa8;border:1px solid #c2dbf7;font-size:11px;">
+                <i class="bi bi-shield-check"></i> All Departments (Admin)
+              </span>
+            {% else %}
+              {% set u_offices = user.get_allowed_offices_list() %}
+              {% if (user.allowed_offices or 'ALL') == 'ALL' or u_offices | length == ALL_OFFICES | length %}
+                <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;">
+                  <i class="bi bi-check-all"></i> All Departments
+                </span>
+              {% else %}
+                <div class="d-flex gap-1 flex-wrap">
+                  {% for o_code in u_offices %}
+                    {% set o_info = ALL_OFFICES.get(o_code) %}
+                    {% if o_info %}
+                    <span class="badge" style="background:{{ o_info.color }};color:#fff;font-size:10.5px;padding:4px 7px;">
+                      <i class="bi {{ o_info.icon }}"></i> {{ o_code }}
+                    </span>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td style="font-size:13px;color:#6b7a8f;white-space:nowrap;">
+            {{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}
+          </td>
+          <td style="text-align:right;">
+            <div style="display:flex;gap:6px;justify-content:flex-end;">
+              
+              <!-- Toggle Role -->
+              <form method="POST" action="{{ url_for('toggle_user_role', email=user.email) }}" style="display:inline;"
+                    onsubmit="return confirm('Change role for {{ user.email }}?');">
+                <button type="submit" class="action-btn" title="Toggle Role">
+                  {% if user.role == 'admin' %}
+                  <i class="bi bi-person-down" style="color:#c0392b;"></i>
+                  {% else %}
+                  <i class="bi bi-person-up" style="color:#1a7a4a;"></i>
+                  {% endif %}
+                </button>
+              </form>
+
+              <!-- Edit User -->
+              <button type="button" class="action-btn" style="color:#2e8de4;" title="Edit User" data-bs-toggle="modal" data-bs-target="#editUserModal-{{ user.email | replace('@', '-') | replace('.', '-') }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+
+              <!-- Delete -->
+              <form method="POST" action="{{ url_for('delete_user', email=user.email) }}" style="display:inline;"
+                    onsubmit="return confirm('Are you sure you want to permanently delete {{ user.email }}?');">
+                <button type="submit" class="action-btn danger" title="Delete User">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-people"></i>
+    <h3>No users found</h3>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add New User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('add_user') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;">Full Name</label>
+            <input type="text" class="form-control" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;">Email Address</label>
+            <input type="email" class="form-control" name="email" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;">Role</label>
+            <select class="form-select" name="role">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <!-- Department Access Selection -->
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;">Department Access (صلاحيات الأقسام)</label>
+            <div class="p-3" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="allowed_offices" value="ALL" id="addOfficeAll" checked onchange="toggleAllOffices(this, 'add')">
+                <label class="form-check-label fw-bold" for="addOfficeAll">
+                  All Departments (جميع الأقسام)
+                </label>
+              </div>
+              <hr class="my-2" style="border-color:#cbd5e1;">
+              <div class="d-flex flex-column gap-2">
+                {% for code, off in ALL_OFFICES.items() %}
+                <div class="form-check">
+                  <input class="form-check-input office-check-add" type="checkbox" name="allowed_offices" value="{{ code }}" id="addOffice{{ code }}" onchange="onSingleOfficeChange('add')">
+                  <label class="form-check-label" for="addOffice{{ code }}">
+                    <span class="badge me-1" style="background:{{ off.color }};color:#fff;font-size:10px;">{{ code }}</span>
+                    {{ off.name }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            <small class="text-muted">Users will only be able to view, create, and track documents in their permitted departments.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:var(--brand-blue);border:none;">Add User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% for user in users %}
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal-{{ user.email | replace('@', '-') | replace('.', '-') }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit User: {{ user.email }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('edit_user', email=user.email) }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;">Full Name</label>
+            <input type="text" class="form-control" name="name" value="{{ user.name }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;">Role</label>
+            <select class="form-select" name="role">
+              <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+              <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+          </div>
+
+          <!-- Department Access Selection -->
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;">Department Access (صلاحيات الأقسام)</label>
+            <div class="p-3" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+              {% set u_raw = (user.allowed_offices or 'ALL').strip().upper() %}
+              {% set is_all = (u_raw == 'ALL' or not u_raw) %}
+              {% set u_allowed_list = user.get_allowed_offices_list() %}
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="allowed_offices" value="ALL" id="editOfficeAll-{{ loop.index }}" {% if is_all %}checked{% endif %} onchange="toggleAllOffices(this, 'edit-{{ loop.index }}')">
+                <label class="form-check-label fw-bold" for="editOfficeAll-{{ loop.index }}">
+                  All Departments (جميع الأقسام)
+                </label>
+              </div>
+              <hr class="my-2" style="border-color:#cbd5e1;">
+              <div class="d-flex flex-column gap-2">
+                {% for code, off in ALL_OFFICES.items() %}
+                <div class="form-check">
+                  <input class="form-check-input office-check-edit-{{ loop.index }}" type="checkbox" name="allowed_offices" value="{{ code }}" id="editOffice{{ code }}-{{ loop.index }}" {% if is_all or code in u_allowed_list %}checked{% endif %} onchange="onSingleOfficeChange('edit-{{ loop.index }}')">
+                  <label class="form-check-label" for="editOffice{{ code }}-{{ loop.index }}">
+                    <span class="badge me-1" style="background:{{ off.color }};color:#fff;font-size:10px;">{{ code }}</span>
+                    {{ off.name }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            <small class="text-muted">Uncheck "All Departments" to limit this user to specific departments only.</small>
+          </div>
+
+          <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" name="reset_otp" id="resetOtp-{{ loop.index }}">
+            <label class="form-check-label text-danger" for="resetOtp-{{ loop.index }}">
+              Reset Authenticator (OTP) <br>
+              <small class="text-muted">User will need to scan a new QR code on their next login.</small>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:var(--brand-blue);border:none;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+function toggleAllOffices(allCheckbox, group) {
+  const checkboxes = document.querySelectorAll('.office-check-' + group);
+  checkboxes.forEach(cb => {
+    cb.checked = allCheckbox.checked;
+  });
+}
+function onSingleOfficeChange(group) {
+  const allCheckbox = document.getElementById(group === 'add' ? 'addOfficeAll' : 'editOfficeAll-' + group.replace('edit-', ''));
+  const checkboxes = document.querySelectorAll('.office-check-' + group);
+  const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  if (allCheckbox) {
+    if (allChecked) {
+      allCheckbox.checked = true;
+    } else {
+      allCheckbox.checked = false;
+    }
+  }
+}
+</script>
+
+{% endblock %}

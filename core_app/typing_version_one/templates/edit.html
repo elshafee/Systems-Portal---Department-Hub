@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}تعديل الرقم التسلسلي{% endblock %}
+{% block page_title %}تعديل الرقم التسلسلي{% endblock %}
+{% block page_sub %}تعديل يدوي وإعادة توليد المستند{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-5">
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon"><i class="bi bi-pencil-square"></i></div>
+        <div>
+          <h2>تعديل الرقم التسلسلي</h2>
+          <p>{{ doc.created_at.strftime('%d %B %Y') }}</p>
+        </div>
+      </div>
+      <div class="card-body-p">
+
+        <table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:20px;">
+          <tr style="border-bottom:1px solid #eef2f8;">
+            <td style="padding:10px 0;color:var(--muted);width:45%;">الرمز الحالي</td>
+            <td style="padding:10px 0;"><span class="code-badge">Code No {{ doc.full_code }}</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid #eef2f8;">
+            <td style="padding:10px 0;color:var(--muted);">الفترة</td>
+            <td style="padding:10px 0;font-family:'DM Mono',monospace;">{{ "%02d"|format(doc.month) }}-{{ doc.year }}</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;color:var(--muted);">الموضوع</td>
+            <td style="padding:10px 0;font-size:13px;">{{ doc.subject or '—' }}</td>
+          </tr>
+        </table>
+
+        <form method="POST">
+          <div class="mb-3">
+            <label class="field-label">الرقم التسلسلي الجديد</label>
+            <input type="number" name="serial_number" class="field-input"
+              value="{{ doc.serial_number }}" min="1" max="9999" required
+              oninput="updatePreview(this.value)" />
+          </div>
+
+          <div style="background:var(--navy);border-radius:8px;padding:14px 18px;margin-bottom:22px;">
+            <div style="color:rgba(255,255,255,.45);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">الرمز الجديد</div>
+            <div style="font-family:'DM Mono',monospace;color:#6dd5fa;font-size:15px;font-weight:600;">
+              Code No <span id="preview">{{ "%04d"|format(doc.serial_number) }} ESSIC {{ "%02d"|format(doc.month) }}-{{ doc.year }}</span>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn-primary">
+              <i class="bi bi-arrow-repeat"></i> حفظ وإعادة التوليد
+            </button>
+            <a href="{{ url_for('documents') }}" class="btn-ghost">
+              <i class="bi bi-arrow-right"></i> إلغاء
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updatePreview(val) {
+  const n = parseInt(val) || 0;
+  document.getElementById('preview').textContent =
+    String(n).padStart(4,'0') + ' ESSIC {{ "%02d"|format(doc.month) }}-{{ doc.year }}';
+}
+</script>
+{% endblock %}

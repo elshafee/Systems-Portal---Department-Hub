@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+
+{% block title %}Systems Portal — Horus University{% endblock %}
+{% block page_title %}Systems Portal & Department Hub{% endblock %}
+
+{% block content %}
+
+<style>
+  .portal-hero {
+    background: linear-gradient(135deg, #0A1128 0%, #111e47 60%, #1a3375 100%);
+    border-radius: var(--radius-lg);
+    padding: 36px 32px;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(10, 17, 40, 0.25);
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+  }
+  .portal-hero::after {
+    content: "";
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(194, 149, 50, 0.25) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .portal-hero-title {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .portal-hero-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.75);
+    max-width: 650px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .portal-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    padding: 0;
+    box-shadow: var(--shadow-card);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  .portal-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 36px rgba(18, 30, 78, 0.12);
+    border-color: #cbd5e1;
+  }
+  .portal-card-header {
+    padding: 24px 24px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    position: relative;
+  }
+  .portal-card-stripe {
+    height: 5px;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .portal-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .portal-card-title-ar {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--brand-navy);
+    margin-bottom: 4px;
+    font-family: 'Cairo', 'DM Sans', sans-serif;
+  }
+  .portal-card-title-en {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--brand-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+  .portal-card-body {
+    padding: 20px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .portal-card-stats {
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .portal-stat-item {
+    text-align: center;
+  }
+  .portal-stat-num {
+    font-size: 22px;
+    font-weight: 800;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.1;
+  }
+  .portal-stat-lbl {
+    font-size: 11px;
+    color: var(--brand-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .portal-card-footer {
+    padding: 16px 24px 24px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #fafbfd;
+  }
+  .btn-enter-system {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  .btn-enter-system:hover {
+    color: #fff;
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  }
+  .btn-sub-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #475569;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s ease;
+    flex: 1;
+  }
+  .btn-sub-link:hover {
+    background: #f1f5f9;
+    color: var(--brand-navy);
+    border-color: #cbd5e1;
+  }
+  .active-pulse-badge {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    background-color: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+  .quick-hub-card {
+    background: #fff;
+    border: 1px solid var(--brand-border);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+  }
+  .quick-hub-card:hover {
+    border-color: var(--brand-accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card);
+  }
+</style>
+
+<!-- Hero Banner -->
+<div class="portal-hero">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+    <div>
+      <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(194, 149, 50, 0.2); border: 1px solid rgba(194, 149, 50, 0.4); color: #f6d892; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
+        <i class="bi bi-shield-check"></i> Horus University Unified Document Portal
+      </div>
+      <h1 class="portal-hero-title">
+        <i class="bi bi-grid-1x2-fill" style="color: var(--brand-accent);"></i>
+        بوابة الأنظمة والمكاتب الإلكترونية
+      </h1>
+      <p class="portal-hero-subtitle">
+        منظومة ترقيم وتوثيق ومتابعة الخطابات والمراسلات الرسمية لجميع الإدارات والمكاتب. اختر القسم أو المكتب المطلوب للبدء، أو تصفح الأرشيف والمتابعة الموحدة لكافة المكاتب.
+      </p>
+    </div>
+
+    <!-- Active Office Pill on Hero -->
+    <div style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 14px 20px; min-width: 230px; backdrop-filter: blur(8px);">
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255, 255, 255, 0.6); font-weight: 600;">Active Session</div>
+      <div style="font-size: 15px; font-weight: 700; color: #fff; margin-top: 3px; display: flex; align-items: center; gap: 8px;">
+        <i class="bi {{ CURRENT_OFFICE.icon }}" style="color: {{ CURRENT_OFFICE.color }};"></i>
+        <span>{{ CURRENT_OFFICE.name }}</span>
+      </div>
+      <div style="font-size: 12px; color: var(--brand-accent); font-weight: 600; margin-top: 2px;">
+        Code: {{ CURRENT_OFFICE.code }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Stats Counters -->
+  <div class="row g-3 pt-3" style="border-top: 1px solid rgba(255, 255, 255, 0.12); margin-top: 12px;">
+    <div class="col-6 col-md-3">
+      <div style="font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 600;">إجمالي الخطابات في المنظومة</div>
+      <div style="font-size: 26px; font-weight: 800; font-family: 'DM Mono', monospace; color: #fff;">{{ global_total }}</div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div style="font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 600;">خطابات بانتظار الرد (متابعة)</div>
+      <div style="font-size: 26px; font-weight: 800; font-family: 'DM Mono', monospace; color: #facc15;">{{ global_awaiting }}</div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div style="font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 600;">ردود واردة مستلمة</div>
+      <div style="font-size: 26px; font-weight: 800; font-family: 'DM Mono', monospace; color: #4ade80;">{{ global_received }}</div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div style="font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 600;">المكاتب والأنظمة المعتمدة</div>
+      <div style="font-size: 26px; font-weight: 800; font-family: 'DM Mono', monospace; color: #60a5fa;">3 مكاتب</div>
+    </div>
+  </div>
+</div>
+
+<!-- Department Cards Section -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 style="font-size: 18px; font-weight: 700; color: var(--brand-navy); margin: 0;">اختر نظام المكتب للعمل عليه</h3>
+    <p style="font-size: 13px; color: var(--brand-muted); margin: 2px 0 0;">يمكنك الدخول مباشرة للنظام أو التبديل السريع من القائمة العلوية</p>
+  </div>
+</div>
+
+<div class="row g-4 mb-5">
+  
+  <!-- CARD 1: ESSIC -->
+  {% if 'ESSIC' in USER_ALLOWED_OFFICES %}
+  <div class="col-12 col-lg-4">
+    <div class="portal-card">
+      <div class="portal-card-stripe" style="background: {{ ALL_OFFICES.ESSIC.color }};"></div>
+      <div class="portal-card-header">
+        {% if SYSTEM_OFFICE_CODE == 'ESSIC' %}
+        <span class="active-pulse-badge">
+          <span class="pulse-dot"></span> النشط حالياً
+        </span>
+        {% endif %}
+        <div class="portal-icon-box" style="background: {{ ALL_OFFICES.ESSIC.color }}15; color: {{ ALL_OFFICES.ESSIC.color }};">
+          <i class="bi {{ ALL_OFFICES.ESSIC.icon }}"></i>
+        </div>
+        <div class="portal-card-title-ar">{{ ALL_OFFICES.ESSIC.name }}</div>
+        <div class="portal-card-title-en">{{ ALL_OFFICES.ESSIC.name_en }} &bull; <strong style="color:{{ ALL_OFFICES.ESSIC.color }};">ESSIC</strong></div>
+        <div style="font-size: 12px; color: #64748b;">
+          <i class="bi bi-person-badge text-primary me-1"></i> {{ ALL_OFFICES.ESSIC.manager_title }}
+        </div>
+      </div>
+
+      <div class="portal-card-body">
+        <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 16px;">
+          إدارة وتوثيق وترقيم مكاتبات مركز الخدمات الإلكترونية والإبداع العلمي بجامعة حورس.
+        </p>
+
+        <div class="portal-card-stats">
+          <div class="portal-stat-item">
+            <div class="portal-stat-num" style="color: {{ ALL_OFFICES.ESSIC.color }};">{{ office_stats.ESSIC.total_docs }}</div>
+            <div class="portal-stat-lbl">إجمالي الخطابات</div>
+          </div>
+          <div style="width: 1px; height: 32px; background: #e2e8f0;"></div>
+          <div class="portal-stat-item">
+            <div class="portal-stat-num" style="color: #9a6c00;">{{ office_stats.ESSIC.awaiting }}</div>
+            <div class="portal-stat-lbl">بانتظار الرد</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="portal-card-footer">
+        <a href="{{ url_for('switch_office', office_code='ESSIC', next=url_for('index')) }}" class="btn-enter-system" style="background: {{ ALL_OFFICES.ESSIC.color }};">
+          <i class="bi bi-file-earmark-plus-fill"></i> دخول النظام وترقيم خطاب
+        </a>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('switch_office', office_code='ESSIC', next=url_for('documents')) }}" class="btn-sub-link">
+            <i class="bi bi-folder2-open text-primary"></i> سجل الخطابات
+          </a>
+          <a href="{{ url_for('switch_office', office_code='ESSIC', next=url_for('tracking')) }}" class="btn-sub-link">
+            <i class="bi bi-send-check text-primary"></i> المتابعة والتتبع
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CARD 2: HUEED (Vice Dean) -->
+  {% if 'HUEED' in USER_ALLOWED_OFFICES %}
+  <div class="col-12 col-lg-4">
+    <div class="portal-card">
+      <div class="portal-card-stripe" style="background: {{ ALL_OFFICES.HUEED.color }};"></div>
+      <div class="portal-card-header">
+        {% if SYSTEM_OFFICE_CODE == 'HUEED' %}
+        <span class="active-pulse-badge">
+          <span class="pulse-dot"></span> النشط حالياً
+        </span>
+        {% endif %}
+        <div class="portal-icon-box" style="background: {{ ALL_OFFICES.HUEED.color }}15; color: {{ ALL_OFFICES.HUEED.color }};">
+          <i class="bi {{ ALL_OFFICES.HUEED.icon }}"></i>
+        </div>
+        <div class="portal-card-title-ar">{{ ALL_OFFICES.HUEED.name }}</div>
+        <div class="portal-card-title-en">{{ ALL_OFFICES.HUEED.name_en }} &bull; <strong style="color:{{ ALL_OFFICES.HUEED.color }};">HUEED</strong></div>
+        <div style="font-size: 12px; color: #64748b;">
+          <i class="bi bi-person-badge text-success me-1"></i> وكيل كلية الهندسة لشئون التعليم والطلاب
+        </div>
+      </div>
+
+      <div class="portal-card-body">
+        <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 16px;">
+          إدارة وتوثيق الخطابات الرسمية الصادرة والواردة من مكتب وكيل كلية الهندسة.
+        </p>
+
+        <div class="portal-card-stats">
+          <div class="portal-stat-item">
+            <div class="portal-stat-num" style="color: {{ ALL_OFFICES.HUEED.color }};">{{ office_stats.HUEED.total_docs }}</div>
+            <div class="portal-stat-lbl">إجمالي الخطابات</div>
+          </div>
+          <div style="width: 1px; height: 32px; background: #e2e8f0;"></div>
+          <div class="portal-stat-item">
+            <div class="portal-stat-num" style="color: #9a6c00;">{{ office_stats.HUEED.awaiting }}</div>
+            <div class="portal-stat-lbl">بانتظار الرد</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="portal-card-footer">
+        <a href="{{ url_for('switch_office', office_code='HUEED', next=url_for('index')) }}" class="btn-enter-system" style="background: {{ ALL_OFFICES.HUEED.color }};">
+          <i class="bi bi-file-earmark-plus-fill"></i> دخول النظام وترقيم خطاب
+        </a>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('switch_office', office_code='HUEED', next=url_for('documents')) }}" class="btn-sub-link">
+            <i class="bi bi-folder2-open text-success"></i> سجل الخطابات
+          </a>
+          <a href="{{ url_for('switch_office', office_code='HUEED', next=url_for('tracking')) }}" class="btn-sub-link">
+            <i class="bi bi-send-check text-success"></i> المتابعة والتتبع
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CARD 3: AIE (Artificial Engineering) -->
+  {% if 'AIE' in USER_ALLOWED_OFFICES %}
+  <div class="col-12 col-lg-4">
+    <div class="portal-card">
+      <div class="portal-card-stripe" style="background: {{ ALL_OFFICES.AIE.color }};"></div>
+      <div class="portal-card-header">
+        {% if SYSTEM_OFFICE_CODE == 'AIE' %}
+        <span class="active-pulse-badge">
+          <span class="pulse-dot"></span> النشط حالياً
+        </span>
+        {% endif %}
+        <div class="portal-icon-box" style="background: {{ ALL_OFFICES.AIE.color }}15; color: {{ ALL_OFFICES.AIE.color }};">
+          <i class="bi {{ ALL_OFFICES.AIE.icon }}"></i>
+        </div>
+        <div class="portal-card-title-ar">{{ ALL_OFFICES.AIE.name }}</div>
+        <div class="portal-card-title-en">{{ ALL_OFFICES.AIE.name_en }} &bull; <strong style="color:{{ ALL_OFFICES.AIE.color }};">AIE</strong></div>
+        <div style="font-size: 12px; color: #64748b;">
+          <i class="bi bi-person-badge text-info me-1"></i> رئيس قسم هندسة الذكاء الاصطناعي
+        </div>
+      </div>
+
+      <div class="portal-card-body">
+        <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 16px;">
+          إدارة وتوثيق قرارات ومراسلات قسم هندسة الذكاء الاصطناعي ومتابعة خطابات القسم.
+        </p>
+
+        <div class="portal-card-stats">
+          <div class="portal-stat-item">
+            <div class="portal-stat-num" style="color: #0891b2;">{{ office_stats.AIE.total_docs }}</div>
+            <div class="portal-stat-lbl">إجمالي الخطابات</div>
+          </div>
+          <div style="width: 1px; height: 32px; background: #e2e8f0;"></div>
+          <div class="portal-stat-item">
+            <div class="portal-stat-num" style="color: #9a6c00;">{{ office_stats.AIE.awaiting }}</div>
+            <div class="portal-stat-lbl">بانتظار الرد</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="portal-card-footer">
+        <a href="{{ url_for('switch_office', office_code='AIE', next=url_for('index')) }}" class="btn-enter-system" style="background: #0891b2;">
+          <i class="bi bi-file-earmark-plus-fill"></i> دخول النظام وترقيم خطاب
+        </a>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('switch_office', office_code='AIE', next=url_for('documents')) }}" class="btn-sub-link">
+            <i class="bi bi-folder2-open text-info"></i> سجل الخطابات
+          </a>
+          <a href="{{ url_for('switch_office', office_code='AIE', next=url_for('tracking')) }}" class="btn-sub-link">
+            <i class="bi bi-send-check text-info"></i> المتابعة والتتبع
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Cross-Department Central Services -->
+<div class="card-custom mb-4">
+  <div class="card-header-custom">
+    <div class="icon-wrap" style="background: #fdf2e9; color: #d97706;">
+      <i class="bi bi-layers-fill"></i>
+    </div>
+    <div>
+      <h2 style="font-size: 16px;">{% if USER_ALLOWED_OFFICES | length > 1 %}خدمات ومتابعات شاملة لكافة المكاتب (Cross-Department Services){% else %}الخدمات والعمليات السريعة للقسم{% endif %}</h2>
+      <p style="font-size: 12px;">{% if USER_ALLOWED_OFFICES | length > 1 %}أدوات مركزية تتيح فحص واستعراض بيانات جميع المكاتب دون الحاجة للتبديل{% else %}أدوات الوصول السريع لأرشيف وتتبع وصياغة خطابات القسم{% endif %}</p>
+    </div>
+  </div>
+
+  <div class="card-body-custom">
+    <div class="row g-3">
+      {% if USER_ALLOWED_OFFICES | length > 1 %}
+      <div class="col-md-4">
+        <a href="{{ url_for('documents', office='ALL') }}" class="quick-hub-card">
+          <div class="stat-icon" style="background:#e8f1fb; color:#1a5fa8; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+            <i class="bi bi-collection-fill"></i>
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:14px; color:var(--brand-navy);">أرشيف جميع المكاتب</div>
+            <div style="font-size:12px; color:var(--brand-muted);">عرض جدول خطابات المكاتب المسموحة مجمعة</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-md-4">
+        <a href="{{ url_for('tracking', office='ALL') }}" class="quick-hub-card">
+          <div class="stat-icon" style="background:#fff8e6; color:#9a6c00; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+            <i class="bi bi-journal-check"></i>
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:14px; color:var(--brand-navy);">المتابعة والتتبع الشامل</div>
+            <div style="font-size:12px; color:var(--brand-muted);">متابعة الاستلام والمهل والردود لكافة الأقسام</div>
+          </div>
+        </a>
+      </div>
+      {% else %}
+      <div class="col-md-4">
+        <a href="{{ url_for('documents') }}" class="quick-hub-card">
+          <div class="stat-icon" style="background:#e8f1fb; color:#1a5fa8; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+            <i class="bi bi-collection-fill"></i>
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:14px; color:var(--brand-navy);">سجل خطابات القسم</div>
+            <div style="font-size:12px; color:var(--brand-muted);">عرض جدول خطابات {{ CURRENT_OFFICE.name }}</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-md-4">
+        <a href="{{ url_for('tracking') }}" class="quick-hub-card">
+          <div class="stat-icon" style="background:#fff8e6; color:#9a6c00; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+            <i class="bi bi-journal-check"></i>
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:14px; color:var(--brand-navy);">المتابعة والتتبع</div>
+            <div style="font-size:12px; color:var(--brand-muted);">متابعة الاستلام والمهل والردود</div>
+          </div>
+        </a>
+      </div>
+      {% endif %}
+
+      <div class="col-md-4">
+        <a href="{{ url_for('ai_step1') }}" class="quick-hub-card">
+          <div class="stat-icon" style="background:#f3e8ff; color:#7e22ce; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+            <i class="bi bi-stars"></i>
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:14px; color:var(--brand-navy);">صياغة بالذكاء الاصطناعي</div>
+            <div style="font-size:12px; color:var(--brand-muted);">توليد وصياغة محتوى الخطابات آلياً حسب المكتب</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

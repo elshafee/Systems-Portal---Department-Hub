@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+{% block title %}الخطوة 2 — بيانات {{ 'الخطاب' if doc_type == 'letter' else 'الطلب' }}{% endblock %}
+{% block page_title %}AI Content Generator{% endblock %}
+{% block page_subtitle %}الخطوة 2 من 3 — إدخال البيانات والمسودة{% endblock %}
+
+{% block content %}
+<div style="direction: rtl; font-family: 'Cairo', sans-serif;">
+
+  <!-- Premium Steps Bar -->
+  <div class="ai-steps-bar mb-5">
+    <div class="ai-step done">
+      <div class="step-icon"><i class="bi bi-check-lg"></i></div>
+      <span class="step-text">نوع المستند</span>
+    </div>
+    <div class="step-divider done"></div>
+    <div class="ai-step active">
+      <div class="step-icon"><i class="bi bi-pencil-square"></i></div>
+      <span class="step-text">بيانات المسودة</span>
+    </div>
+    <div class="step-divider"></div>
+    <div class="ai-step">
+      <div class="step-icon">3</div>
+      <span class="step-text">المراجعة والاعتماد</span>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="premium-form-card">
+        <div class="form-header">
+          <h4>بيانات {{ 'الخطاب' if doc_type == 'letter' else 'الطلب' }} الأساسية</h4>
+          <p>يرجى إدخال البيانات الرئيسية وسيقوم الذكاء الاصطناعي بصياغتها بأسلوب رسمي.</p>
+        </div>
+
+        <form action="{{ url_for('ai_generate') }}" method="post" id="aiForm" enctype="multipart/form-data">
+          <input type="hidden" name="doc_type" value="{{ doc_type }}">
+
+          <div class="row g-3">
+            <div class="col-md-7 premium-input-group">
+              <label>المرسل (اسم وشخصية المُصدر)</label>
+              <input type="text" class="premium-input" name="sender" list="sender-list" required
+                placeholder="مثال: أ.د. أحمد خالد">
+              <datalist id="sender-list">
+                {% for c in contacts if c.type == 'sender' %}
+                  <option value="{{ c.name }}"></option>
+                {% endfor %}
+              </datalist>
+            </div>
+            <div class="col-md-5 premium-input-group">
+              <label>منصب المرسل</label>
+              <input type="text" class="premium-input" name="sender_position" required
+                placeholder="مثال: مدير مركز الخدمات الإلكترونية">
+            </div>
+          </div>
+
+          <div class="premium-input-group">
+            <label>المرسل إليه (الجهة/القسم)</label>
+            <input type="text" class="premium-input" name="recipient" list="recipient-list" required placeholder="مثال: مكتب رئيس جامعة حورس">
+            <datalist id="recipient-list">
+              {% for c in contacts if c.type == 'recipient' %}
+                <option value="{{ c.name }}"></option>
+              {% endfor %}
+            </datalist>
+            <span class="input-hint"><i class="bi bi-info-circle"></i> تُدرج في خانة
+              <code>{{"{{TO_SEND}}"}}</code></span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-7 premium-input-group">
+              <label>اسم ولقب المرسل إليه (للعناية)</label>
+              <input type="text" class="premium-input" name="holder_name" required
+                placeholder="مثال: السيد الأستاذ الدكتور / محمد عبدالعال – الموقر">
+            </div>
+            <div class="col-md-5 premium-input-group">
+              <label>المنصب</label>
+              <input type="text" class="premium-input" name="position" required
+                placeholder="مثال: نائب رئيس جامعة حورس">
+            </div>
+          </div>
+
+          <div class="premium-input-group mt-3">
+            <label>موضوع {{ 'الخطاب' if doc_type == 'letter' else 'الطلب' }}</label>
+            <input type="text" class="premium-input" name="subject" required
+              placeholder="مثال: طلب الموافقة على إنشاء النطاق الإلكتروني">
+          </div>
+
+          <div class="premium-input-group">
+            <label>المسودة أو الفكرة الرئيسية <span class="badge bg-light text-primary border ms-2">للذكاء
+                الاصطناعي</span></label>
+            <textarea class="premium-input" name="raw_draft" required
+              placeholder="اكتب فكرتك هنا ببساطة (حتى بالعامية) وسيقوم الذكاء الاصطناعي بتحويلها لأسلوب إداري رصين..."></textarea>
+          </div>
+
+          <!-- Attachments Section (Tables & Images) -->
+          <div class="premium-input-group mt-4" style="text-align: right;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label mb-0" style="font-weight:600;color:var(--brand-navy);">المرفقات (جداول وصور)</label>
+              <button type="button" class="btn btn-sm btn-primary" onclick="addNewTableBuilder()">+ إضافة جدول آخر</button>
+            </div>
+            <p style="font-size: 13px; color: var(--brand-muted); text-align: right; margin-bottom: 12px;">أضف جداول أو صور هنا. سيقوم "التنسيق الذكي" بوضع علامات وتلقائياً في النص لتحديد مكانها.</p>
+            
+            <input type="hidden" name="tables_data" id="direct_table_data_hidden" value="[]">
+            <div id="table-builders-container">
+              <div class="table-builder-ui border p-3 rounded bg-light mb-3 dynamic-table-container text-end">
+                <div class="d-flex justify-content-between mb-2">
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addDirectCol(this)">+ عمود</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addDirectRow(this)">+ صف</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearDirectTable(this)">مسح</button>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-info text-white table-label" style="font-weight:bold;" onclick="insertPlaceholder('{{ '{' + '{' }}TABLE_1{{ '}' + '}' }}')">إدراج {{ '{' + '{' }}TABLE_1{{ '}' + '}' }} في النص</button>
+                </div>
+                <div class="table-responsive" style="direction: ltr;">
+                  <table class="table table-bordered text-center mb-0 dynamic-table" style="background: #fff; direction: rtl;">
+                    <tbody>
+                      <tr>
+                        <td>
+                          <div class="cell-wrapper" style="position:relative;">
+                            <input type="text" class="form-control form-control-sm text-center" placeholder="بيانات...">
+                            <div class="cell-controls" style="display:none; position:absolute; left: -10px; top: -10px; z-index: 10; gap: 2px;">
+                              <button type="button" class="btn btn-danger btn-sm p-0 d-flex align-items-center justify-content-center" style="height:20px; font-size:10px; border-radius:10px; padding: 0 6px !important;" onclick="deleteSpecificRow(this)" title="حذف الصف"><i class="bi bi-x"></i> صف</button>
+                              <button type="button" class="btn btn-warning btn-sm p-0 d-flex align-items-center justify-content-center text-dark" style="height:20px; font-size:10px; border-radius:10px; padding: 0 6px !important;" onclick="deleteSpecificCol(this)" title="حذف العمود"><i class="bi bi-x"></i> عمود</button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+              <label class="form-label mb-0"></label>
+              <button type="button" class="btn btn-sm btn-primary" onclick="addNewImageUpload()">+ إضافة صورة أخرى</button>
+            </div>
+            <div id="image-uploads-container" class="text-end">
+              <div class="image-upload-row d-flex align-items-center gap-2 mb-2">
+                <button type="button" class="btn btn-sm btn-info text-white image-label" style="font-weight:bold; min-width: 150px;" onclick="insertPlaceholder('{{ '{' + '{' }}IMAGE_1{{ '}' + '}' }}')">إدراج {{ '{' + '{' }}IMAGE_1{{ '}' + '}' }} في النص</button>
+                <input type="file" name="images" class="form-control" accept="image/*" style="direction: ltr;">
+              </div>
+            </div>
+          </div>
+
+          <div class="premium-input-group">
+            <label>نموذج الذكاء الاصطناعي</label>
+            <select name="model" class="premium-input custom-select">
+              {% for m in models %}
+              <option value="{{ m }}">{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-actions mt-4">
+            <a href="{{ url_for('ai_step1') }}" class="btn-ghost-premium">
+              العودة <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+            <button type="submit" class="btn-gradient-submit" id="submitBtn">
+              صياغة بالذكاء الاصطناعي <i class="bi bi-magic ms-2"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  /* Same steps bar style as step 1 */
+  .ai-steps-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 700px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 16px 24px;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(15, 39, 68, .04);
+    border: 1px solid var(--brand-border);
+  }
+
+  .ai-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0.5;
+    transition: all .3s;
+  }
+
+  .ai-step.active,
+  .ai-step.done {
+    opacity: 1;
+  }
+
+  .step-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #f0f4fa;
+    color: var(--brand-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    border: 1px solid var(--brand-border);
+  }
+
+  .ai-step.active .step-icon {
+    background: linear-gradient(135deg, var(--brand-blue), var(--brand-accent));
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(26, 95, 168, .3);
+  }
+
+  .ai-step.done .step-icon {
+    background: #e8f8f1;
+    color: #1a7a4a;
+    border-color: #a8dfc0;
+  }
+
+  .step-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand-navy);
+  }
+
+  .ai-step.done .step-text {
+    color: #1a7a4a;
+  }
+
+  .step-divider {
+    flex: 1;
+    height: 2px;
+    background: var(--brand-border);
+    margin: 0 16px;
+    opacity: 0.5;
+  }
+
+  .step-divider.done {
+    background: #1a7a4a;
+    opacity: 0.3;
+  }
+
+  /* Premium Form */
+  .premium-form-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(15, 39, 68, .05);
+    border: 1px solid rgba(208, 218, 232, 0.6);
+  }
+
+  .form-header {
+    margin-bottom: 32px;
+    border-bottom: 1px solid #f0f4fa;
+    padding-bottom: 20px;
+  }
+
+  .form-header h4 {
+    font-weight: 800;
+    color: var(--brand-navy);
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .form-header p {
+    color: var(--brand-muted);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .premium-input-group {
+    margin-bottom: 24px;
+    text-align: right;
+  }
+
+  .premium-input-group label {
+    display: block;
+    font-weight: 700;
+    color: var(--brand-navy);
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .premium-input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 2px solid #eef2f7;
+    background: #fafcff;
+    font-size: 14px;
+    color: var(--brand-dark);
+    transition: all 0.3s;
+    font-family: inherit;
+  }
+
+  .premium-input:focus {
+    outline: none;
+    border-color: var(--brand-accent);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(46, 141, 228, 0.1);
+  }
+
+  textarea.premium-input {
+    min-height: 140px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  select.premium-input {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: left 16px center;
+    background-size: 16px;
+    padding-left: 40px;
+  }
+
+  .input-hint {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--brand-muted);
+    margin-top: 6px;
+  }
+
+  .input-hint code {
+    background: #f0f4fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--brand-navy);
+  }
+
+  .form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #f0f4fa;
+    padding-top: 24px;
+  }
+
+  .btn-gradient-submit {
+    background: linear-gradient(135deg, var(--brand-blue), var(--brand-accent));
+    color: #fff;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-gradient-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(26, 95, 168, .3);
+  }
+
+  .btn-gradient-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-ghost-premium {
+    color: var(--brand-muted);
+    background: transparent;
+    border: 2px solid var(--brand-border);
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .btn-ghost-premium:hover {
+    background: #f0f4fa;
+    color: var(--brand-navy);
+    border-color: #d0dae8;
+  }
+  
+  .cell-wrapper:hover .cell-controls {
+    display: flex !important;
+  }
+</style>
+
+<script>
+  document.getElementById('aiForm').addEventListener('submit', function () {
+    updateDirectTableData();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = 'جاري التفكير والصياغة... <span class="spinner-border spinner-border-sm ms-2"></span>';
+
+    // Show AI Overlay if it exists in base.html
+    const overlay = document.getElementById('ai-overlay');
+    if (overlay) overlay.classList.add('show');
+  });
+
+  const CELL_HTML = `
+    <div class="cell-wrapper" style="position:relative;">
+      <input type="text" class="form-control form-control-sm text-center" placeholder="بيانات...">
+      <div class="cell-controls" style="display:none; position:absolute; left: -10px; top: -10px; z-index: 10; gap: 2px;">
+        <button type="button" class="btn btn-danger btn-sm p-0 d-flex align-items-center justify-content-center" style="height:20px; font-size:10px; border-radius:10px; padding: 0 6px !important;" onclick="deleteSpecificRow(this)" title="حذف الصف"><i class="bi bi-x"></i> صف</button>
+        <button type="button" class="btn btn-warning btn-sm p-0 d-flex align-items-center justify-content-center text-dark" style="height:20px; font-size:10px; border-radius:10px; padding: 0 6px !important;" onclick="deleteSpecificCol(this)" title="حذف العمود"><i class="bi bi-x"></i> عمود</button>
+      </div>
+    </div>
+  `;
+
+  function getTableBody(btn) {
+    return btn.closest('.dynamic-table-container').querySelector('.dynamic-table tbody');
+  }
+  function addDirectRow(btn) {
+    const tbody = getTableBody(btn);
+    const cols = tbody.rows.length > 0 ? tbody.rows[0].cells.length : 1;
+    const newRow = tbody.insertRow();
+    for (let i = 0; i < cols; i++) {
+      const cell = newRow.insertCell(i);
+      cell.innerHTML = CELL_HTML;
+    }
+  }
+  function addDirectCol(btn) {
+    const tbody = getTableBody(btn);
+    if (tbody.rows.length === 0) addDirectRow(btn);
+    for (let i = 0; i < tbody.rows.length; i++) {
+      const cell = tbody.rows[i].insertCell(-1);
+      cell.innerHTML = CELL_HTML;
+    }
+  }
+  function deleteSpecificRow(btn) {
+    const tbody = btn.closest('tbody');
+    if (tbody.rows.length > 1) {
+      const tr = btn.closest('tr');
+      if (tr) tr.remove();
+    } else {
+      alert("لا يمكن حذف الصف الوحيد.");
+    }
+  }
+  function deleteSpecificCol(btn) {
+    const tbody = btn.closest('tbody');
+    if (tbody.rows.length > 0 && tbody.rows[0].cells.length > 1) {
+      const td = btn.closest('td');
+      if (td) {
+        const index = td.cellIndex;
+        for (let i = 0; i < tbody.rows.length; i++) {
+          tbody.rows[i].deleteCell(index);
+        }
+      }
+    } else {
+      alert("لا يمكن حذف العمود الوحيد.");
+    }
+  }
+  function clearDirectTable(btn) {
+    const tbody = getTableBody(btn);
+    tbody.innerHTML = `<tr><td>${CELL_HTML}</td></tr>`;
+  }
+  function updateTableLabels() {
+    const containers = document.querySelectorAll('.dynamic-table-container');
+    containers.forEach((container, index) => {
+      const label = container.querySelector('.table-label');
+      if (label) {
+        const tag = '{{ '{' + '{' }}TABLE_' + (index + 1) + '{{ '}' + '}' }}';
+        label.textContent = `إدراج ${tag} في النص`;
+        label.setAttribute('onclick', `insertPlaceholder('${tag}')`);
+      }
+    });
+  }
+  function addNewTableBuilder() {
+    const container = document.getElementById('table-builders-container');
+    const newBuilder = document.createElement('div');
+    newBuilder.className = 'table-builder-ui border p-3 rounded bg-light mb-3 dynamic-table-container text-end';
+    newBuilder.innerHTML = `
+      <div class="d-flex justify-content-between mb-2">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addDirectCol(this)">+ عمود</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addDirectRow(this)">+ صف</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearDirectTable(this)">مسح</button>
+          <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="removeTableBuilder(this)"><i class="bi bi-trash"></i> حذف الجدول</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-info text-white table-label" style="font-weight:bold;"></button>
+      </div>
+      <div class="table-responsive" style="direction: ltr;">
+        <table class="table table-bordered text-center mb-0 dynamic-table" style="background: #fff; direction: rtl;">
+          <tbody>
+            <tr><td>${CELL_HTML}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+    container.appendChild(newBuilder);
+    updateTableLabels();
+  }
+  function removeTableBuilder(btn) {
+    btn.closest('.dynamic-table-container').remove();
+    updateTableLabels();
+  }
+  function updateImageLabels() {
+    const rows = document.querySelectorAll('#image-uploads-container .image-upload-row');
+    rows.forEach((row, index) => {
+      const label = row.querySelector('.image-label');
+      if (label) {
+        const tag = '{{ '{' + '{' }}IMAGE_' + (index + 1) + '{{ '}' + '}' }}';
+        label.textContent = `إدراج ${tag} في النص`;
+        label.setAttribute('onclick', `insertPlaceholder('${tag}')`);
+      }
+    });
+  }
+  function addNewImageUpload() {
+    const container = document.getElementById('image-uploads-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'image-upload-row d-flex align-items-center gap-2 mb-2';
+    newRow.innerHTML = `
+      <button type="button" class="btn btn-sm btn-info text-white image-label" style="font-weight:bold; min-width: 150px;"></button>
+      <input type="file" name="images" class="form-control" accept="image/*" style="direction: ltr;">
+      <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImageUpload(this)"><i class="bi bi-trash"></i></button>
+    `;
+    container.appendChild(newRow);
+    updateImageLabels();
+  }
+  function removeImageUpload(btn) {
+    btn.closest('.image-upload-row').remove();
+    updateImageLabels();
+  }
+  function insertPlaceholder(tag) {
+    const textarea = document.querySelector('textarea[name="raw_draft"]');
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const val = textarea.value;
+    let toInsert = tag + '\n';
+    if (start > 0 && val.charAt(start - 1) !== '\n') {
+      toInsert = '\n' + toInsert;
+    }
+    textarea.value = val.substring(0, start) + toInsert + val.substring(end);
+    textarea.selectionStart = textarea.selectionEnd = start + toInsert.length;
+    textarea.focus();
+  }
+  function updateDirectTableData() {
+    const tablesData = [];
+    const tables = document.querySelectorAll('.dynamic-table');
+    tables.forEach(table => {
+      const tbody = table.querySelector('tbody');
+      const tableRows = [];
+      Array.from(tbody.rows).forEach(tr => {
+        const rowData = [];
+        Array.from(tr.cells).forEach(td => {
+          const input = td.querySelector('input[type="text"]');
+          rowData.push(input ? input.value : "");
+        });
+        tableRows.push(rowData);
+      });
+      tablesData.push(tableRows);
+    });
+    document.getElementById('direct_table_data_hidden').value = JSON.stringify(tablesData);
+  }
+</script>
+
+<script>
+  // Autocomplete logic for Recipient
+  document.addEventListener('DOMContentLoaded', function() {
+    const contactsData = {{ contacts | tojson | safe }};
+    const recipientInput = document.querySelector('input[name="recipient"]');
+    
+    if(recipientInput) {
+      recipientInput.addEventListener('input', function(e) {
+        const val = e.target.value.trim();
+        const contact = contactsData.find(c => c.type === 'recipient' && c.name === val);
+        if (contact) {
+            if (contact.holder_name) {
+                const hn = document.querySelector('input[name="holder_name"]');
+                if(hn) hn.value = contact.holder_name;
+            }
+            if (contact.position) {
+                const pos = document.querySelector('input[name="position"]');
+                if(pos) pos.value = contact.position;
+            }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

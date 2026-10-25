@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}الخطوة 1 — اختر نوع المستند{% endblock %}
+{% block page_title %}إنشاء مستند جديد{% endblock %}
+{% block page_sub %}الخطوة 1 من 4 — اختر نوع المستند{% endblock %}
+
+{% block content %}
+
+<!-- Steps bar -->
+<div class="steps-bar">
+  <div class="step-item">
+    <div class="step-circle active">1</div>
+    <span class="step-label active">نوع المستند</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item">
+    <div class="step-circle">2</div>
+    <span class="step-label">البيانات والمسودة</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item">
+    <div class="step-circle">3</div>
+    <span class="step-label">مراجعة النص</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item">
+    <div class="step-circle">4</div>
+    <span class="step-label">رفع القالب وتنزيل</span>
+  </div>
+</div>
+
+<div class="row g-4 justify-content-center" style="max-width:780px;margin:0 auto;">
+
+  <!-- Letter -->
+  <div class="col-md-6">
+    <a href="{{ url_for('step2', doc_type='letter') }}" class="type-card" id="card-letter">
+      <div class="type-icon" style="background:#eaf1fb;color:#1558a8;">
+        <i class="bi bi-envelope-paper"></i>
+      </div>
+      <h3>خطاب رسمي</h3>
+      <p>مراسلة رسمية خارجية أو داخلية بأسلوب الخطابات الإدارية المعتمدة</p>
+      <div class="type-example">
+        <span>مثال: خطاب تقرير، خطاب تنسيق، خطاب إحاطة</span>
+      </div>
+      <div class="choose-btn">اختر <i class="bi bi-arrow-left"></i></div>
+    </a>
+  </div>
+
+  <!-- Request -->
+  <div class="col-md-6">
+    <a href="{{ url_for('step2', doc_type='request') }}" class="type-card" id="card-request">
+      <div class="type-icon" style="background:#fff8e6;color:#c9973a;">
+        <i class="bi bi-file-earmark-check"></i>
+      </div>
+      <h3>طلب رسمي</h3>
+      <p>مذكرة طلب داخلية أو خارجية لتنفيذ إجراء أو اتخاذ قرار معين</p>
+      <div class="type-example">
+        <span>مثال: طلب إنشاء Domain، طلب صيانة، طلب موافقة</span>
+      </div>
+      <div class="choose-btn">اختر <i class="bi bi-arrow-left"></i></div>
+    </a>
+  </div>
+
+</div>
+
+<style>
+  .type-card {
+    display: block;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-decoration: none;
+    color: var(--navy);
+    transition: all .22s;
+    height: 100%;
+    box-shadow: 0 2px 10px rgba(11,31,58,.06);
+  }
+  .type-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 28px rgba(21,88,168,.15);
+    transform: translateY(-3px);
+    color: var(--navy);
+  }
+  .type-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; margin-bottom: 16px;
+  }
+  .type-card h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+  .type-card p  { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+  .type-example {
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .choose-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--blue); font-size: 14px; font-weight: 700;
+  }
+</style>
+{% endblock %}

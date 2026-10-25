@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Dashboard — Gateway SSO</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --brand-navy:   #0a1628;
+      --brand-blue:   #123258;
+      --brand-accent: #2e8de4;
+      --brand-gold:   #eebb55;
+      --brand-gold-glow: rgba(238, 187, 85, 0.6);
+      --brand-muted:  #8b9db1;
+    }
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      background-color: var(--brand-navy);
+      background-image: 
+        radial-gradient(circle at 20% 0%, rgba(26, 95, 168, 0.15), transparent 40%),
+        radial-gradient(circle at 80% 100%, rgba(46, 141, 228, 0.15), transparent 40%),
+        linear-gradient(rgba(10, 22, 40, 0.95), rgba(10, 22, 40, 0.98)),
+        url("{{ url_for('static', filename='images/essic_bg.jpg') }}");
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-attachment: fixed;
+      background-size: cover;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* Animated Golden Circuit Background */
+    .bg-circuit {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.8;
+    }
+    .animated-path {
+      fill: none;
+      stroke: url(#goldGradient);
+      stroke-width: 1.5;
+      filter: url(#glow);
+      stroke-dasharray: 3000;
+      stroke-dashoffset: 3000;
+      animation: drawCircuit 8s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+    }
+    .animated-node {
+      fill: #ffd700;
+      filter: url(#glow);
+      opacity: 0;
+      animation: fadeInNode 8s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+      transform-origin: center;
+    }
+
+    @keyframes drawCircuit {
+      0%, 10% { stroke-dashoffset: 3000; }
+      90%, 100% { stroke-dashoffset: 0; }
+    }
+    @keyframes fadeInNode {
+      0%, 60% { opacity: 0; transform: scale(0.5); }
+      90%, 100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Navbar */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 48px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(10, 22, 40, 0.4);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 20px;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.5px;
+    }
+    
+    .nav-brand .badge {
+      background: linear-gradient(135deg, var(--brand-accent), #1a5fa8);
+      color: #fff;
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(46, 141, 228, 0.3);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .user-greeting {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .user-greeting span {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main Container */
+    .dashboard-container {
+      max-width: 1280px;
+      margin: 60px auto;
+      padding: 0 32px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .dashboard-header {
+      text-align: center;
+      margin-bottom: 64px;
+      animation: fadeDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .dashboard-header h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      background: linear-gradient(to right, #fff, #b4d5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 10px 30px rgba(46, 141, 228, 0.2);
+    }
+
+    .dashboard-header p {
+      font-size: 18px;
+      color: var(--brand-muted);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Grid Layout */
+    .systems-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 32px;
+      opacity: 0;
+      animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+    }
+
+    /* Premium System Card */
+    .sys-card {
+      position: relative;
+      background: rgba(18, 37, 65, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      overflow: hidden;
+      text-decoration: none;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sys-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(238, 187, 85, 0.06), transparent 40%);
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .sys-card:hover {
+      transform: translateY(-8px) scale(1.01);
+      border-color: rgba(238, 187, 85, 0.3);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(238, 187, 85, 0.1);
+    }
+
+    .sys-card:hover::after {
+      opacity: 1;
+    }
+
+    /* Card Image Background */
+    .card-img-bg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 200px;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .card-img-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.4;
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s;
+    }
+
+    .card-img-bg::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(to bottom, rgba(18, 37, 65, 0) 0%, rgba(18, 37, 65, 1) 100%);
+    }
+
+    .sys-card:hover .card-img-bg img {
+      transform: scale(1.1);
+      opacity: 0.6;
+    }
+
+    /* Card Content */
+    .card-content {
+      position: relative;
+      z-index: 2;
+      padding: 40px 32px 32px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-icon-wrapper {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: var(--brand-gold);
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      transition: all 0.4s ease;
+    }
+
+    .sys-card:hover .card-icon-wrapper {
+      transform: scale(1.05) translateY(-4px);
+      background: linear-gradient(135deg, rgba(238, 187, 85, 0.15), rgba(238, 187, 85, 0.05));
+      border-color: rgba(238, 187, 85, 0.3);
+      box-shadow: 0 12px 24px rgba(238, 187, 85, 0.2);
+    }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    .card-desc {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.6;
+      margin-bottom: 32px;
+      flex: 1;
+    }
+
+    .card-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 0.5px;
+      transition: color 0.3s;
+    }
+    
+    .card-action i {
+      font-size: 18px;
+      color: var(--brand-gold);
+      transition: transform 0.3s;
+    }
+
+    .sys-card:hover .card-action {
+      color: #fff;
+    }
+
+    .sys-card:hover .card-action i {
+      transform: translateX(6px);
+    }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .top-nav { padding: 20px 24px; }
+      .user-greeting { display: none; }
+      .dashboard-header h1 { font-size: 36px; }
+      .systems-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Elegant Electronic Tech Core Background -->
+  <svg class="bg-circuit" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="blur1" />
+        <feGaussianBlur stdDeviation="8" result="blur2" />
+        <feMerge>
+          <feMergeNode in="blur2"/>
+          <feMergeNode in="blur1"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fff0bc" />
+        <stop offset="50%" stop-color="#f2c94c" />
+        <stop offset="100%" stop-color="#f2994a" />
+      </linearGradient>
+    </defs>
+
+    <style>
+      .bg-circuit {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.45;
+      }
+      .tech-line {
+        fill: none;
+        stroke: url(#goldGradient);
+        stroke-width: 1.5;
+        filter: url(#glow);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 4000;
+        stroke-dashoffset: 4000;
+        animation: drawTech 12s cubic-bezier(0.25, 0.1, 0.25, 1) infinite alternate;
+      }
+      .tech-line-fast {
+        fill: none;
+        stroke: url(#goldGradient);
+        stroke-width: 1;
+        opacity: 0.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 2000;
+        stroke-dashoffset: 2000;
+        animation: drawTech 8s cubic-bezier(0.25, 0.1, 0.25, 1) infinite alternate;
+      }
+      .tech-node {
+        fill: #f2c94c;
+        filter: url(#glow);
+        opacity: 0;
+        animation: pulseNode 6s ease-in-out infinite alternate;
+      }
+      .tech-core-inner {
+        fill: rgba(242, 201, 76, 0.05);
+        stroke: url(#goldGradient);
+        stroke-width: 2;
+        filter: url(#glow);
+        animation: pulseCoreInner 4s ease-in-out infinite alternate;
+      }
+      .spin-slow {
+        transform-origin: center;
+        animation: spin 60s linear infinite;
+      }
+      .spin-reverse {
+        transform-origin: center;
+        animation: spin 45s linear infinite reverse;
+      }
+      .float-container {
+        transform-origin: center;
+        animation: floatShape 10s ease-in-out infinite alternate;
+      }
+
+      @keyframes drawTech {
+        0%, 5% { stroke-dashoffset: 4000; }
+        95%, 100% { stroke-dashoffset: 0; }
+      }
+      @keyframes pulseNode {
+        0%, 30% { opacity: 0; transform: scale(0); }
+        90%, 100% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes pulseCoreInner {
+        0% { transform: scale(0.95); opacity: 0.5; }
+        100% { transform: scale(1.05); opacity: 1; }
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes floatShape {
+        0% { transform: translateY(-15px) rotateX(10deg) rotateY(-10deg); }
+        100% { transform: translateY(15px) rotateX(-10deg) rotateY(10deg); }
+      }
+    </style>
+
+    <g transform="translate(720, 450)">
+      
+      <!-- Outer Rotating Rings -->
+      <g class="spin-slow">
+        <!-- Segmented Tech Ring -->
+        <circle cx="0" cy="0" r="350" class="tech-line-fast" stroke-dasharray="10 40 100 40" />
+        <circle cx="0" cy="0" r="330" class="tech-line-fast" stroke-dasharray="2 10" />
+      </g>
+      <g class="spin-reverse">
+        <circle cx="0" cy="0" r="280" class="tech-line" stroke-dasharray="200 100" />
+        <circle cx="0" cy="0" r="260" class="tech-line-fast" stroke-dasharray="5 20" />
+      </g>
+
+      <!-- Central Electronic Core (3D Geometric Isometric Look) -->
+      <g class="float-container">
+        
+        <!-- Background Hexagon Base -->
+        <polygon points="0,-180 156,-90 156,90 0,180 -156,90 -156,-90" class="tech-line" />
+        
+        <!-- Inner Star / Cube lines -->
+        <path class="tech-line" d="M 0 0 L 0 -180" style="animation-delay: 1s;" />
+        <path class="tech-line" d="M 0 0 L 156 90" style="animation-delay: 1s;" />
+        <path class="tech-line" d="M 0 0 L -156 90" style="animation-delay: 1s;" />
+
+        <path class="tech-line" d="M 156 -90 L 0 90 L -156 -90 Z" style="animation-delay: 2s;" />
+        
+        <!-- Central Processor Node -->
+        <polygon points="0,-60 52,-30 52,30 0,60 -52,30 -52,-30" class="tech-core-inner" />
+        <circle cx="0" cy="0" r="10" class="tech-node" />
+
+        <!-- Circuit Traces extending from core -->
+        <g style="animation-delay: 1.5s;">
+          <!-- Top Right -->
+          <path class="tech-line-fast" d="M 52 -30 L 120 -70 L 250 -70 L 300 -120 L 500 -120" />
+          <circle cx="500" cy="-120" r="4" class="tech-node" />
+          <circle cx="250" cy="-70" r="3" class="tech-node" />
+
+          <!-- Right -->
+          <path class="tech-line-fast" d="M 156 90 L 250 140 L 400 140 L 450 190 L 700 190" />
+          <circle cx="400" cy="140" r="3" class="tech-node" />
+          <circle cx="700" cy="190" r="4" class="tech-node" />
+
+          <!-- Bottom -->
+          <path class="tech-line-fast" d="M 0 180 L 0 250 L -80 330 L -80 450" />
+          <path class="tech-line-fast" d="M 0 250 L 120 370 L 400 370" />
+          <circle cx="400" cy="370" r="4" class="tech-node" />
+
+          <!-- Bottom Left -->
+          <path class="tech-line-fast" d="M -156 90 L -250 140 L -300 140 L -400 240 L -600 240" />
+          <circle cx="-300" cy="140" r="3" class="tech-node" />
+          
+          <!-- Top Left -->
+          <path class="tech-line-fast" d="M -52 -30 L -120 -70 L -200 -70 L -350 -220 L -550 -220" />
+          <circle cx="-200" cy="-70" r="3" class="tech-node" />
+          <circle cx="-550" cy="-220" r="4" class="tech-node" />
+          
+          <!-- Top -->
+          <path class="tech-line-fast" d="M 0 -180 L 0 -280 L 100 -380 L 200 -380 L 300 -480" />
+          <circle cx="200" cy="-380" r="4" class="tech-node" />
+        </g>
+      </g>
+      
+    </g>
+  </svg>
+
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <div class="nav-brand">
+      <div class="badge">GATEWAY</div>
+      <span>SSO Center</span>
+    </div>
+    <div class="user-profile">
+      <div class="user-greeting">
+        Welcome back, <span>{{ session.get('user', {}).get('name', 'User').title() }}</span>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout">
+        <i class="bi bi-box-arrow-right"></i> Sign Out
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="dashboard-container">
+    
+    <header class="dashboard-header">
+      <h1>Select a System</h1>
+      <p>You have access to multiple secure environments. Choose the portal you wish to enter below.</p>
+    </header>
+
+    <div class="systems-grid">
+      {% for sys_id, sys_info in systems %}
+      <a href="{{ url_for('goto_system', sys_id=sys_id) }}" class="sys-card" id="card-{{ sys_id }}">
+        
+        <div class="card-img-bg">
+          {% if sys_info.image %}
+          <img src="{{ url_for('static', filename=sys_info.image) }}" alt="{{ sys_info.name }} Background">
+          {% else %}
+          <div style="width:100%; height:100%; background: linear-gradient(135deg, rgba(26, 95, 168, 0.4), rgba(10, 22, 40, 0.1));"></div>
+          {% endif %}
+        </div>
+        
+        <div class="card-content">
+          <div class="card-icon-wrapper">
+            <i class="bi {{ sys_info.icon | default('bi-grid-fill') }}"></i>
+          </div>
+          
+          <h3 class="card-title">{{ sys_info.name }}</h3>
+          <p class="card-desc">{{ sys_info.desc | default('Access the secure ' + sys_info.name + ' environment.') }}</p>
+          
+          <div class="card-action">
+            <span>Launch System</span>
+            <i class="bi bi-arrow-right"></i>
+          </div>
+        </div>
+        
+      </a>
+      {% endfor %}
+    </div>
+    
+  </main>
+
+  <!-- Script for mouse glow effect on cards -->
+  <script>
+    document.querySelectorAll('.sys-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+    });
+  </script>
+</body>
+</html>

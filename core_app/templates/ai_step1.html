@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}الخطوة 1 — اختر نوع المستند{% endblock %}
+{% block page_title %}AI Content Generator{% endblock %}
+{% block page_subtitle %}الخطوة 1 من 3 — اختر نوع المستند{% endblock %}
+
+{% block content %}
+<div style="direction: rtl; font-family: 'Cairo', sans-serif;">
+  
+<!-- Premium Steps Bar -->
+<div class="ai-steps-bar mb-5">
+  <div class="ai-step active">
+    <div class="step-icon"><i class="bi bi-file-earmark-text"></i></div>
+    <span class="step-text">نوع المستند</span>
+  </div>
+  <div class="step-divider"></div>
+  <div class="ai-step">
+    <div class="step-icon">2</div>
+    <span class="step-text">بيانات المسودة</span>
+  </div>
+  <div class="step-divider"></div>
+  <div class="ai-step">
+    <div class="step-icon">3</div>
+    <span class="step-text">المراجعة والاعتماد</span>
+  </div>
+</div>
+
+<div class="text-center mb-5">
+  <h2 style="font-weight: 800; color: var(--brand-navy); font-size: 28px;">ماذا تريد أن تكتب اليوم؟</h2>
+  <p style="color: var(--brand-muted); font-size: 15px;">اختر نوع المراسلة ليبدأ الذكاء الاصطناعي في مساعدتك بصياغتها بأعلى معايير الدقة.</p>
+</div>
+
+<div class="row g-4 justify-content-center" style="max-width: 900px; margin: 0 auto;">
+  <!-- Letter Card -->
+  <div class="col-md-6">
+    <a href="{{ url_for('ai_step2', doc_type='letter') }}" class="premium-card">
+      <div class="card-glow"></div>
+      <div class="card-content">
+        <div class="icon-wrapper letter-icon">
+          <i class="bi bi-envelope-paper-fill"></i>
+        </div>
+        <h3 class="card-title">خطاب رسمي</h3>
+        <p class="card-desc">مراسلة رسمية خارجية أو داخلية بأسلوب الخطابات الإدارية المعتمدة.</p>
+        <ul class="example-list">
+          <li><i class="bi bi-check2-circle"></i> خطابات التنسيق والتوجيه</li>
+          <li><i class="bi bi-check2-circle"></i> خطابات الإحاطة أو التقارير</li>
+        </ul>
+        <div class="action-row">
+          <span class="action-text">البدء في الصياغة</span>
+          <i class="bi bi-arrow-left"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Request Card -->
+  <div class="col-md-6">
+    <a href="{{ url_for('ai_step2', doc_type='request') }}" class="premium-card">
+      <div class="card-glow"></div>
+      <div class="card-content">
+        <div class="icon-wrapper request-icon">
+          <i class="bi bi-ui-checks"></i>
+        </div>
+        <h3 class="card-title">طلب رسمي</h3>
+        <p class="card-desc">مذكرة طلب داخلية أو خارجية لتنفيذ إجراء أو الحصول على موافقة.</p>
+        <ul class="example-list">
+          <li><i class="bi bi-check2-circle"></i> طلب إنشاء Domain</li>
+          <li><i class="bi bi-check2-circle"></i> طلبات الصيانة والموارد</li>
+        </ul>
+        <div class="action-row">
+          <span class="action-text">البدء في الصياغة</span>
+          <i class="bi bi-arrow-left"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+</div>
+
+<style>
+  /* AI Steps Bar */
+  .ai-steps-bar {
+    display: flex; align-items: center; justify-content: center; max-width: 700px; margin: 0 auto;
+    background: #fff; padding: 16px 24px; border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(15,39,68,.04); border: 1px solid var(--brand-border);
+  }
+  .ai-step { display: flex; align-items: center; gap: 12px; opacity: 0.5; transition: all .3s; }
+  .ai-step.active { opacity: 1; }
+  .step-icon {
+    width: 38px; height: 38px; border-radius: 12px; background: #f0f4fa; color: var(--brand-navy);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;
+    border: 1px solid var(--brand-border);
+  }
+  .ai-step.active .step-icon {
+    background: linear-gradient(135deg, var(--brand-blue), var(--brand-accent));
+    color: #fff; border: none; box-shadow: 0 4px 12px rgba(26,95,168,.3);
+  }
+  .step-text { font-size: 14px; font-weight: 700; color: var(--brand-navy); }
+  .step-divider { flex: 1; height: 2px; background: var(--brand-border); margin: 0 16px; opacity: 0.5; }
+
+  /* Premium Cards */
+  .premium-card {
+    display: block; position: relative; text-decoration: none; border-radius: 24px;
+    background: #fff; padding: 2px; /* for gradient border effect */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden;
+  }
+  .card-content {
+    background: #fff; border-radius: 22px; padding: 32px 28px; height: 100%;
+    position: relative; z-index: 2;
+  }
+  .card-glow {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+    background: linear-gradient(135deg, var(--brand-border), #fff, var(--brand-border));
+    transition: all 0.4s;
+  }
+  .premium-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(15,39,68,.12); }
+  .premium-card:hover .card-glow { background: linear-gradient(135deg, var(--brand-blue), #8dc4fa, var(--brand-accent)); }
+  
+  .icon-wrapper {
+    width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 20px; transition: transform 0.3s;
+  }
+  .letter-icon { background: #e8f1fb; color: var(--brand-blue); }
+  .request-icon { background: #fff8e6; color: #c9973a; }
+  .premium-card:hover .icon-wrapper { transform: scale(1.08); }
+
+  .card-title { font-size: 20px; font-weight: 800; color: var(--brand-navy); margin-bottom: 12px; }
+  .card-desc { font-size: 14px; color: var(--brand-muted); line-height: 1.7; margin-bottom: 20px; }
+  
+  .example-list { list-style: none; padding: 0; margin: 0 0 24px; }
+  .example-list li {
+    font-size: 13px; color: var(--brand-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .example-list i { color: #1a7a4a; font-size: 15px; }
+
+  .action-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 16px; border-top: 1px solid #f0f4fa;
+    color: var(--brand-blue); font-weight: 700; font-size: 14px; transition: color 0.2s;
+  }
+  .premium-card:hover .action-row i { transform: translateX(-6px); }
+  .action-row i { transition: transform 0.3s; font-size: 18px; }
+</style>
+{% endblock %}

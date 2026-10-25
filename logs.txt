@@ -1,0 +1,1599 @@
+Starting Gateway...
+Starting Essic...
+Starting Faculty of Engineering...
+Starting Biomedical Department (AIE)...
+All systems started! Gateway is running on http://127.0.0.1:5000
+Press Ctrl+C to stop all.
+ * Serving Flask app 'app'
+ * Debug mode: on
+Address already in use
+Port 5000 is in use by another program. Either identify and stop that program, or start the server with a different port.
+On macOS, try searching for and disabling 'AirPlay Receiver' in System Settings.
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+[33mPress CTRL+C to quit[0m
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5003
+[33mPress CTRL+C to quit[0m
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5002
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [30/Sep/2026 23:52:52] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [30/Sep/2026 23:53:05] "[31m[1mGET /sso_login?token=invalid HTTP/1.1[0m" 400 -
+127.0.0.1 - - [30/Sep/2026 23:54:36] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiU3VwZXIgQWRtaW4ifQ.i-A2snVwE82LUQBd1gGO45RH9uywUTH3oZiXMog1ZUM HTTP/1.1[0m" 302 -
+127.0.0.1 - - [30/Sep/2026 23:54:36] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Sep/2026 23:54:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Sep/2026 23:54:38] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [30/Sep/2026 23:54:38] "[33mGET /history HTTP/1.1[0m" 404 -
+127.0.0.1 - - [30/Sep/2026 23:54:38] "GET /settings HTTP/1.1" 200 -
+127.0.0.1 - - [30/Sep/2026 23:56:03] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMDYzfQ.XEHkqAgODYuxofUA1kvnwOHvfUawTI1hzWT1-9GRmhM&next=http://127.0.0.1:5003 HTTP/1.1[0m" 302 -
+[2026-09-30 23:56:03,230] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:56:03] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [30/Sep/2026 23:56:03] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:03] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:03] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:05] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMDY1fQ.sj1S_TmDKEeOpTt-tLpzCwDPRHJg-BAuQhMFm3fvb-8&next=http://127.0.0.1:5002 HTTP/1.1[0m" 302 -
+[2026-09-30 23:56:05,837] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:56:05] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [30/Sep/2026 23:56:05] "[33mGET /static/assets/main_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [30/Sep/2026 23:56:05] "[33mGET /static/assets/sidebar_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [30/Sep/2026 23:56:05] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:05] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:05] "[36mGET /static/assets/image2.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:08] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMDY4fQ.4MRQgdknfvGTHpIlWTqGGAijG_G6FhkjB-3kfBUIHng&next=http://127.0.0.1:5001 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [30/Sep/2026 23:56:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Sep/2026 23:56:08] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:08] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:08] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:08] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:12] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMDcxfQ.XC4pvWdmRdVY4vZJhNlxsRIwZRMBHWccAV7DvEh2bAE&next=http://127.0.0.1:5002 HTTP/1.1[0m" 302 -
+[2026-09-30 23:56:12,161] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:56:12] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [30/Sep/2026 23:56:12] "[33mGET /static/assets/main_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [30/Sep/2026 23:56:12] "[33mGET /static/assets/sidebar_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [30/Sep/2026 23:56:12] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:12] "[36mGET /static/assets/image2.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:12] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:14] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMDc0fQ.TRKAzglPB3trAopTlaEmrzs742eOTn5ESkB_3kS-zMA&next=http://127.0.0.1:5003 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [30/Sep/2026 23:56:14] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMDc0fQ.TRKAzglPB3trAopTlaEmrzs742eOTn5ESkB_3kS-zMA&next=http://127.0.0.1:5003 HTTP/1.1[0m" 302 -
+[2026-09-30 23:56:14,898] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:56:15] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [30/Sep/2026 23:56:15] "[32mGET / HTTP/1.1[0m" 302 -
+[2026-09-30 23:56:15,548] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:56:15] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [30/Sep/2026 23:56:15] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:15] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:56:15] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:58:17] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMTk3fQ.YbEtSMhK39BalQFwSJEnhARRERjyN5ak2p872mMqTqQ&next=http://127.0.0.1:5002 HTTP/1.1[0m" 302 -
+[2026-09-30 23:58:17,672] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:58:17] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [30/Sep/2026 23:58:17] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:58:17] "[33mGET /static/assets/sidebar_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [30/Sep/2026 23:58:17] "[36mGET /static/assets/image2.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:58:17] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [30/Sep/2026 23:58:17] "[33mGET /static/assets/main_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [30/Sep/2026 23:58:22] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiU3VwZXIgQWRtaW4ifQ.i-A2snVwE82LUQBd1gGO45RH9uywUTH3oZiXMog1ZUM HTTP/1.1[0m" 302 -
+[2026-09-30 23:58:22,775] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:58:22] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [30/Sep/2026 23:58:22] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiU3VwZXIgQWRtaW4ifQ.i-A2snVwE82LUQBd1gGO45RH9uywUTH3oZiXMog1ZUM HTTP/1.1[0m" 302 -
+[2026-09-30 23:58:23,090] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 9, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [30/Sep/2026 23:58:23] "[35m[1mGET / HTTP/1.1[0m" 500 -
+[2026-10-01 00:00:07,180] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 10, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [01/Oct/2026 00:00:07] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [01/Oct/2026 00:00:11] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMzExfQ.Rs90rQ5287TcGBXJAztE_f_lCdWA2zYpmyoHfJmzYXk&next=http://127.0.0.1:5003 HTTP/1.1[0m" 302 -
+[2026-10-01 00:00:11,176] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 10, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [01/Oct/2026 00:00:11] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [01/Oct/2026 00:00:11] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:00:11] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:00:11] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:00:13] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyMzEzfQ.QTRIIdvpFV1W7YYms-l5dHg72_UUlc1Zy9THfgz1hXU&next=http://127.0.0.1:5002 HTTP/1.1[0m" 302 -
+[2026-10-01 00:00:13,579] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 87, in decorated_function
+    return f(*args, **kwargs)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/core_app/app.py", line 399, in index
+    next_serial = get_next_serial(now_preview.month, now_preview.year)
+  File "/Users/ahmadkhaled/Documents/GitHub/mixed/services/numbering.py", line 26, in get_next_serial
+    .first()
+     ~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2766, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2864, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column documents.is_sent does not exist
+LINE 1: ...rl, documents.created_at AS documents_created_at, documents....
+                                                             ^
+[SQL: SELECT documents.id AS documents_id, documents.serial_number AS documents_serial_number, documents.full_code AS documents_full_code, documents.month AS documents_month, documents.year AS documents_year, documents.filename AS documents_filename, documents.file_title AS documents_file_title, documents.generated_filename AS documents_generated_filename, documents.generated_pdf_filename AS documents_generated_pdf_filename, documents.username AS documents_username, documents.email AS documents_email, documents.status AS documents_status, documents.doc_type AS documents_doc_type, documents.sender AS documents_sender, documents.sender_position AS documents_sender_position, documents.recipient AS documents_recipient, documents.subject AS documents_subject, documents.holder_name AS documents_holder_name, documents.position AS documents_position, documents.is_internal AS documents_is_internal, documents.manager_is_sender AS documents_manager_is_sender, documents.raw_draft AS documents_raw_draft, documents.generated_body AS documents_generated_body, documents.ai_model AS documents_ai_model, documents.sharepoint_url AS documents_sharepoint_url, documents.created_at AS documents_created_at, documents.is_sent AS documents_is_sent, documents.sent_date AS documents_sent_date, documents.sent_method AS documents_sent_method, documents.sent_by AS documents_sent_by, documents.received_by AS documents_received_by, documents.sent_notes AS documents_sent_notes, documents.requires_response AS documents_requires_response, documents.response_deadline AS documents_response_deadline, documents.response_status AS documents_response_status, documents.response_date AS documents_response_date, documents.response_ref AS documents_response_ref, documents.response_summary AS documents_response_summary, documents.response_file AS documents_response_file, documents.response_received_by AS documents_response_received_by, documents.followup_notes AS documents_followup_notes 
+FROM documents 
+WHERE documents.month = %(month_1)s::INTEGER AND documents.year = %(year_1)s::INTEGER ORDER BY documents.serial_number DESC 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'month_1': 10, 'year_1': 2026, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [01/Oct/2026 00:00:13] "[35m[1mGET / HTTP/1.1[0m" 500 -
+127.0.0.1 - - [01/Oct/2026 00:00:13] "[33mGET /static/assets/sidebar_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [01/Oct/2026 00:00:13] "[33mGET /static/assets/main_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [01/Oct/2026 00:00:13] "[36mGET /static/assets/image2.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:00:13] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:00:13] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:00:58] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiU3VwZXIgQWRtaW4ifQ.i-A2snVwE82LUQBd1gGO45RH9uywUTH3oZiXMog1ZUM HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:00:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:01:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:01:00] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiU3VwZXIgQWRtaW4ifQ.i-A2snVwE82LUQBd1gGO45RH9uywUTH3oZiXMog1ZUM HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:01:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:01:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:27] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyODA3fQ.PslzEJeMCPvzKTU0dDvdkFwK_-Z_jm4TBR80HPPsJ2M&next=http://127.0.0.1:5002 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "[33mGET /static/assets/main_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "[33mGET /static/assets/sidebar_bg_white.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "[36mGET /static/assets/image2.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "GET /static/assets/image4.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "GET /static/assets/tech_bg.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "GET /static/assets/sidebar_bg.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:28] "GET /static/assets/doc_image3.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyODE1fQ.CDavT_O-PwVCcroRqNesoG0tjnyR8QOPnnmwnOyeZFk&next=http://127.0.0.1:5001 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:35] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAyODE5fQ.yNvOm_OWf_qow9zvIOr56jBqcAMIhDtYAoqeJV-DlUg&next=http://127.0.0.1:5003 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "[36mGET /static/assets/image1.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "[36mGET /static/assets/image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "GET /static/assets/sidebar_bg.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "GET /static/assets/tech_bg.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:08:39] "GET /static/assets/doc_image3.png HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:12:14] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:12:14] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:12:14] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:12:14] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:12:14] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:20] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAzMTAwfQ.cb5s6WhTn3YrjQ-xCrs3I66pymUvrBVQf2S40o9ztOk&next=http://127.0.0.1:5002 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:13:20] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:13:20] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:20] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:21] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:21] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:26] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAzMTA2fQ.myIVwqqd80lSAmDpATqyWzhHB8VhFzdgWTWUn927BM4&next=http://127.0.0.1:5001 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:13:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:13:26] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:26] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:26] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:26] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:29] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAzMTA5fQ.wzBOEETfuilw__Apaa2gSMSTHzGRVk85jrSdh23yG9w&next=http://127.0.0.1:5003 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:13:29] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:13:29] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:29] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:29] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:13:29] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[32mGET /sso_login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFlbHNoYWZlZUBob3J1cy5lZHUuZWciLCJuYW1lIjoiYWVsc2hhZmVlIiwiZXhwIjoxNzkwODAzMTQ5fQ.aD019QuxWkovCyI3votZvaEd_blPbnMs6FsEe9u_vVQ&next=http://127.0.0.1:5002 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/image4.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/doc_image3.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/tech_bg.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [01/Oct/2026 00:14:09] "[36mGET /static/assets/sidebar_bg.jpg HTTP/1.1[0m" 304 -
+./start_all.sh: line 63: unexpected EOF while looking for matching `"'
+./start_all.sh: line 65: syntax error: unexpected end of file
+Shutting down servers...

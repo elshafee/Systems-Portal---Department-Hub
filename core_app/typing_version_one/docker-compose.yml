@@ -1,0 +1,13 @@
+services:
+  essic-docs:
+    build: .
+    container_name: essic_document_numbering
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./generated:/app/generated
+      - ./documents.db:/app/documents.db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # allows container to reach LM Studio on Mac/Linux
+    restart: unless-stopped

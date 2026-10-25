@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}الخطوة 2 — البيانات والمسودة{% endblock %}
+{% block page_title %}{% if doc_type == 'letter' %}خطاب رسمي{% else %}طلب رسمي{% endif %}{% endblock %}
+{% block page_sub %}الخطوة 2 من 4 — أدخل بيانات المستند ومسودتك{% endblock %}
+
+{% block content %}
+
+<!-- Steps bar -->
+<div class="steps-bar">
+  <div class="step-item">
+    <div class="step-circle done"><i class="bi bi-check"></i></div>
+    <span class="step-label done">نوع المستند</span>
+  </div>
+  <div class="step-line done"></div>
+  <div class="step-item">
+    <div class="step-circle active">2</div>
+    <span class="step-label active">البيانات والمسودة</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item">
+    <div class="step-circle">3</div>
+    <span class="step-label">مراجعة النص</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item">
+    <div class="step-circle">4</div>
+    <span class="step-label">رفع القالب وتنزيل</span>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('step3') }}" id="compose-form">
+  <input type="hidden" name="doc_type" value="{{ doc_type }}" />
+
+  <div class="row g-4">
+
+    <!-- Right column: fields -->
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-icon">
+            <i class="bi bi-{% if doc_type == 'letter' %}envelope-paper{% else %}file-earmark-check{% endif %}"></i>
+          </div>
+          <div>
+            <h2>بيانات المستند</h2>
+            <p>{{ 'خطاب رسمي' if doc_type == 'letter' else 'طلب رسمي' }}</p>
+          </div>
+        </div>
+        <div class="card-body-p">
+
+          <div class="mb-3">
+            <label class="field-label">المرسِل <span style="color:var(--red)">*</span></label>
+            <input type="text" name="sender" class="field-input" required
+              value="مدير مركز الخدمات الإلكترونية والإبداع العلمي (ESSIC)"
+              placeholder="مثال: مدير مركز الخدمات الإلكترونية والإبداع العلمي (ESSIC)" />
+          </div>
+
+          <div class="mb-3">
+            <label class="field-label">المرسَل إليه <span style="color:var(--red)">*</span></label>
+            <input type="text" name="recipient" class="field-input" required
+              placeholder="مثال: قسم تكنولوجيا المعلومات (IT)" />
+          </div>
+
+          <div class="mb-3">
+            <label class="field-label">الموضوع <span style="color:var(--red)">*</span></label>
+            <input type="text" name="subject" class="field-input" required
+              placeholder="مثال: طلب إنشاء Domain جديد" />
+          </div>
+
+          <div class="mb-2">
+            <label class="field-label">النموذج المستخدم (LM Studio)</label>
+            <select name="model" class="field-select">
+              {% for m in models %}
+              <option value="{{ m }}">{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Left column: draft -->
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-icon"><i class="bi bi-pencil-square"></i></div>
+          <div>
+            <h2>المسودة الحرة</h2>
+            <p>اكتب الفكرة الرئيسية بأي شكل — الذكاء الاصطناعي سيصيغها رسمياً</p>
+          </div>
+        </div>
+        <div class="card-body-p">
+          <label class="field-label">
+            أدخل محتوى المستند (بالعربية أو بشكل مختصر)
+            <span style="color:var(--red)">*</span>
+          </label>
+          <textarea name="raw_draft" class="field-textarea" required rows="10"
+            placeholder="مثال:
+برجاء انشاء Domain جديد بعنوان etc.horus.edu.eg
+الغرض: استخدام المنظومة الرقمية الجديدة
+هذا الطلب عاجل ويحتاج التنفيذ قبل نهاية الأسبوع"></textarea>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;">
+            <i class="bi bi-info-circle"></i>
+            اكتب الفكرة بحرية — سيتولى الذكاء الاصطناعي إعادة الصياغة والتنسيق الرسمي تلقائياً
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="d-flex gap-3 mt-2">
+    <button type="submit" class="btn-primary" id="gen-btn" onclick="showOverlay()">
+      <i class="bi bi-cpu"></i> توليد النص بالذكاء الاصطناعي
+    </button>
+    <a href="{{ url_for('step1') }}" class="btn-ghost">
+      <i class="bi bi-arrow-right"></i> رجوع
+    </a>
+  </div>
+
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showOverlay() {
+  document.getElementById('ai-overlay').classList.add('show');
+}
+</script>
+{% endblock %}

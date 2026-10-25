@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}سجل المستندات — ESSIC{% endblock %}
+{% block page_title %}سجل المستندات{% endblock %}
+{% block page_sub %}جميع المستندات المُرقَّمة والمُولَّدة{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  {% set this_month = documents | selectattr('month','equalto',now.month) | selectattr('year','equalto',now.year) | list %}
+  <div class="col-6 col-md-3">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-body-p" style="padding:18px 20px;">
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--navy);">{{ documents|length }}</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px;">إجمالي المستندات</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-body-p" style="padding:18px 20px;">
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--navy);">{{ this_month|length }}</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px;">هذا الشهر</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-body-p" style="padding:18px 20px;">
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--navy);">
+          {{ documents | selectattr('doc_type','equalto','letter') | list | length }}
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px;">خطابات</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-body-p" style="padding:18px 20px;">
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--navy);">
+          {{ documents | selectattr('doc_type','equalto','request') | list | length }}
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px;">طلبات</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div class="card-head" style="justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="card-icon"><i class="bi bi-archive"></i></div>
+      <div><h2>جميع المستندات</h2><p>مرتبة بالأحدث أولاً</p></div>
+    </div>
+    <a href="{{ url_for('step1') }}" class="btn-primary" style="font-size:13px;padding:8px 16px;">
+      <i class="bi bi-plus-lg"></i> مستند جديد
+    </a>
+  </div>
+
+  {% if documents %}
+  <div style="overflow-x:auto;">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>رمز المستند</th>
+          <th>النوع</th>
+          <th>الموضوع</th>
+          <th>المرسل إليه</th>
+          <th>الفترة</th>
+          <th>التاريخ</th>
+          <th style="text-align:left;">إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <td style="color:var(--muted);font-size:12px;">{{ loop.index }}</td>
+          <td>
+            <span class="code-badge">Code No {{ doc.full_code }}</span>
+          </td>
+          <td>
+            {% if doc.doc_type == 'letter' %}
+              <span style="background:#eaf1fb;color:var(--blue);font-size:12px;font-weight:700;padding:3px 9px;border-radius:5px;">خطاب</span>
+            {% else %}
+              <span style="background:#fff8e6;color:var(--gold);font-size:12px;font-weight:700;padding:3px 9px;border-radius:5px;">طلب</span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ doc.subject }}">
+            {{ doc.subject or '—' }}
+          </td>
+          <td style="font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ doc.recipient }}">
+            {{ doc.recipient or '—' }}
+          </td>
+          <td style="font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;">
+            {{ "%02d"|format(doc.month) }}-{{ doc.year }}
+          </td>
+          <td style="font-size:12px;color:var(--muted);white-space:nowrap;">
+            {{ doc.created_at.strftime('%d %b %Y, %H:%M') }}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              {% if doc.generated_filename %}
+              <a href="{{ url_for('download', doc_id=doc.id) }}" class="act-btn" title="تنزيل">
+                <i class="bi bi-download"></i>
+              </a>
+              {% endif %}
+              <a href="{{ url_for('edit', doc_id=doc.id) }}" class="act-btn" title="تعديل الرقم التسلسلي">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST" action="{{ url_for('delete', doc_id=doc.id) }}" style="display:inline;"
+                    onsubmit="return confirm('حذف Code No {{ doc.full_code }}؟');">
+                <button type="submit" class="act-btn del" title="حذف">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="empty">
+    <i class="bi bi-inbox"></i>
+    <h3>لا توجد مستندات بعد</h3>
+    <p>أنشئ مستندك الأول باستخدام الذكاء الاصطناعي</p>
+    <a href="{{ url_for('step1') }}" class="btn-primary mt-2">
+      <i class="bi bi-plus-lg"></i> ابدأ الآن
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

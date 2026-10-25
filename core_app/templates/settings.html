@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}AI Provider Settings - {{ SYSTEM_OFFICE_CODE }} Document Numbering{% endblock %}
+{% block page_title %}AI Provider Settings{% endblock %}
+{% block page_subtitle %}Manage your API keys for text generation models{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card-custom">
+      <div class="card-header-custom" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+        <h2><i class="bi bi-key-fill text-primary me-2"></i> Your API Keys</h2>
+        <p style="margin:0; font-size:13px; color:var(--brand-muted);">
+          The system uses multiple AI models to generate text. It tries Gemini first, then falls back to Groq, and finally DeepSeek if rate limits are reached. Your keys are encrypted before storage.
+        </p>
+      </div>
+      
+      <div class="card-body-custom">
+        <form method="POST" action="{{ url_for('settings_page') }}">
+          
+          <!-- Gemini -->
+          <div class="mb-4 pb-3" style="border-bottom: 1px solid var(--brand-border);">
+            <label class="form-label d-flex align-items-center gap-2" style="font-weight:600; color:var(--brand-navy);">
+              <img src="https://www.gstatic.com/lamina/icon/favicon.ico" width="16" height="16" alt="Gemini"> 
+              Google Gemini API Key (Primary)
+            </label>
+            <p style="font-size:12px; color:var(--brand-muted); margin-bottom:8px;">
+              Used for the `gemini-1.5-flash` model. Get a key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.
+            </p>
+            <div class="input-group">
+              <input type="password" class="form-control" name="gemini_key" id="gemini_key" value="{{ user_keys.get('gemini', '') }}" placeholder="AIzaSy...">
+              <button class="btn btn-outline-secondary toggle-pwd" type="button" data-target="gemini_key">
+                <i class="bi bi-eye"></i> Show
+              </button>
+            </div>
+          </div>
+
+          <!-- Groq -->
+          <div class="mb-4 pb-3" style="border-bottom: 1px solid var(--brand-border);">
+            <label class="form-label d-flex align-items-center gap-2" style="font-weight:600; color:var(--brand-navy);">
+              <i class="bi bi-lightning-charge-fill text-warning"></i> 
+              Groq API Key (Fallback 1)
+            </label>
+            <p style="font-size:12px; color:var(--brand-muted); margin-bottom:8px;">
+              Used for the `llama-3.1-70b-versatile` model. Get a key from <a href="https://console.groq.com/keys" target="_blank">Groq Console</a>.
+            </p>
+            <div class="input-group">
+              <input type="password" class="form-control" name="groq_key" id="groq_key" value="{{ user_keys.get('groq', '') }}" placeholder="gsk_...">
+              <button class="btn btn-outline-secondary toggle-pwd" type="button" data-target="groq_key">
+                <i class="bi bi-eye"></i> Show
+              </button>
+            </div>
+          </div>
+
+          <!-- DeepSeek -->
+          <div class="mb-4">
+            <label class="form-label d-flex align-items-center gap-2" style="font-weight:600; color:var(--brand-navy);">
+              <i class="bi bi-robot text-info"></i> 
+              DeepSeek API Key (Fallback 2)
+            </label>
+            <p style="font-size:12px; color:var(--brand-muted); margin-bottom:8px;">
+              Used for the `deepseek-chat` model. Get a key from <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek Platform</a>.
+            </p>
+            <div class="input-group">
+              <input type="password" class="form-control" name="deepseek_key" id="deepseek_key" value="{{ user_keys.get('deepseek', '') }}" placeholder="sk-...">
+              <button class="btn btn-outline-secondary toggle-pwd" type="button" data-target="deepseek_key">
+                <i class="bi bi-eye"></i> Show
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn-primary-custom" style="padding: 10px 24px; border:none; border-radius:var(--radius-md);">
+              <i class="bi bi-floppy"></i> Save Keys
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="card-custom bg-light">
+      <div class="card-body-custom">
+        <h5 style="color:var(--brand-navy); font-size:16px; font-weight:700;"><i class="bi bi-shield-lock-fill text-success"></i> Security Note</h5>
+        <p style="font-size:13px; color:var(--brand-muted); margin-bottom:0; line-height:1.6;">
+          Your API keys are encrypted at rest using AES-128 (Fernet) before being saved to the database. They are only decrypted temporarily in memory during document generation. Never share your API keys with anyone.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.toggle-pwd').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      const icon = this.querySelector('i');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+        this.childNodes[1].nodeValue = ' Hide';
+      } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+        this.childNodes[1].nodeValue = ' Show';
+      }
+    });
+  });
+</script>
+{% endblock %}

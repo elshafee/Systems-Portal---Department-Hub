@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Document — {{ SYSTEM_OFFICE_CODE }}{% endblock %}
+{% block page_title %}Edit Serial Number{% endblock %}
+{% block page_subtitle %}Manually override the serial number and regenerate the document{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+
+    <!-- Current info -->
+    <div class="card-custom mb-4">
+      <div class="card-header-custom">
+        <div class="icon-wrap"><i class="bi bi-file-earmark-text"></i></div>
+        <div>
+          <h2>Document Info</h2>
+          <p>Uploaded on {{ doc.created_at.strftime('%d %B %Y at %H:%M') }}</p>
+        </div>
+      </div>
+      <div class="card-body-custom">
+        <table style="width:100%;font-size:14px;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid #f0f4fa;">
+            <td style="padding:10px 0;color:#6b7a8f;width:40%;">Current Code</td>
+            <td style="padding:10px 0;">
+              <span class="code-badge">Code No {{ doc.full_code }}</span>
+            </td>
+          </tr>
+          <tr style="border-bottom:1px solid #f0f4fa;">
+            <td style="padding:10px 0;color:#6b7a8f;">Period</td>
+            <td style="padding:10px 0;font-family:'DM Mono',monospace;">{{ "%02d" | format(doc.month) }}-{{ doc.year }}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f0f4fa;">
+            <td style="padding:10px 0;color:#6b7a8f;">Serial Number</td>
+            <td style="padding:10px 0;font-family:'DM Mono',monospace;font-weight:600;">{{ "%04d" | format(doc.serial_number) }}</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;color:#6b7a8f;">Original File</td>
+            <td style="padding:10px 0;font-size:13px;">{{ doc.filename }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Edit form -->
+    <div class="card-custom">
+      <div class="card-header-custom">
+        <div class="icon-wrap"><i class="bi bi-pencil-square"></i></div>
+        <div>
+          <h2>Change Serial Number</h2>
+          <p>The full code and document will be regenerated automatically</p>
+        </div>
+      </div>
+      <div class="card-body-custom">
+        <form method="POST" id="edit-form">
+
+          <div style="margin-bottom:20px;">
+            <label for="serial_number" style="display:block;font-size:13px;font-weight:600;color:#0f2744;margin-bottom:8px;">
+              New Serial Number
+            </label>
+            <input
+              type="number"
+              name="serial_number"
+              id="serial_number"
+              value="{{ doc.serial_number }}"
+              min="1"
+              max="9999"
+              required
+              style="
+                width:100%;
+                padding:11px 14px;
+                border:1px solid #d0dae8;
+                border-radius:8px;
+                font-family:'DM Mono',monospace;
+                font-size:16px;
+                font-weight:600;
+                color:#0f2744;
+                outline:none;
+                transition:border .2s;
+              "
+              onfocus="this.style.borderColor='#2e8de4';"
+              onblur="this.style.borderColor='#d0dae8';"
+              oninput="updatePreview(this.value)"
+            />
+            <div style="font-size:12px;color:#6b7a8f;margin-top:6px;">Between 1 and 9999</div>
+          </div>
+
+          <!-- Live preview -->
+          <div class="code-preview-box" style="margin-bottom:24px;">
+            <div>
+              <div class="label">New code will be</div>
+              <div class="code">Code No <span id="preview-code">{{ "%04d" | format(doc.serial_number) }} {{ SYSTEM_OFFICE_CODE }} {{ "%02d" | format(doc.month) }}-{{ doc.year }}</span></div>
+            </div>
+          </div>
+
+          <!-- Full document edit fields -->
+          {% if doc.doc_type == 'direct' %}
+          <hr style="margin: 24px 0; border-color: #d0dae8;">
+          <h5 style="font-size: 15px; font-weight: 600; color: #0f2744; margin-bottom: 16px; text-align: right; direction: rtl;">تعديل محتوى المستند</h5>
+          
+          <div class="row" style="direction: rtl; text-align: right;">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">المرسل إليه (Recipient)</label>
+              <input type="text" class="form-control" name="recipient" value="{{ doc.recipient or '' }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">الموضوع (Subject)</label>
+              <input type="text" class="form-control" name="subject" value="{{ doc.subject or '' }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">عناية السيد (Holder Name)</label>
+              <input type="text" class="form-control" name="holder_name" value="{{ doc.holder_name or '' }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">الصفة (Position)</label>
+              <input type="text" class="form-control" name="position" value="{{ doc.position or '' }}" required>
+            </div>
+            <div class="col-md-12 mb-3">
+              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">المرسل (Sender)</label>
+              <input type="text" class="form-control" name="sender" value="{{ doc.sender or '' }}">
+            </div>
+          </div>
+
+          <div class="form-check mb-3" style="text-align: right; direction: rtl; padding-right: 0;">
+            <input class="form-check-input float-end ms-2" type="checkbox" name="is_internal" id="is_internal" value="1" {% if doc.is_internal %}checked{% endif %}>
+            <label class="form-check-label" for="is_internal" style="font-weight:600;color:#0f2744;font-size:13px; margin-right: 1.5rem;">
+              مراسلة داخلية (Internal Correspondence)
+            </label>
+          </div>
+          
+          <div class="form-group mb-4" style="direction: rtl; text-align: right;">
+            <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">نص المستند (Body Text)</label>
+            <textarea class="form-control" name="full_body" rows="6" required>{{ doc.generated_body or '' }}</textarea>
+            <div style="font-size:12px;color:#6b7a8f;margin-top:6px;">قم بتعديل المحتوى هنا.</div>
+          </div>
+          {% endif %}
+
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn-primary-custom">
+              <i class="bi bi-arrow-repeat"></i> Save & Regenerate
+            </button>
+            <a href="{{ url_for('documents') }}" style="
+              display:inline-flex;align-items:center;gap:8px;
+              padding:11px 20px;border-radius:8px;
+              border:1px solid #d0dae8;background:#fff;
+              color:#6b7a8f;font-size:14px;font-weight:600;
+              text-decoration:none;transition:all .18s;
+            " onmouseover="this.style.background='#f0f4fa'" onmouseout="this.style.background='#fff'">
+              <i class="bi bi-arrow-left"></i> Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function updatePreview(val) {
+    const n = parseInt(val) || 0;
+    const padded = String(n).padStart(4, '0');
+    const month  = '{{ "%02d" | format(doc.month) }}';
+    const year   = '{{ doc.year }}';
+    document.getElementById('preview-code').textContent = `${padded} {{ SYSTEM_OFFICE_CODE }} ${month}-${year}`;
+  }
+
+  document.getElementById('edit-form').addEventListener('submit', function(e) {
+    const btn = this.querySelector('button[type=submit]');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

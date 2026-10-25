@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}الخطوة 3 — مراجعة النص{% endblock %}
+{% block page_title %}مراجعة النص المُولَّد{% endblock %}
+{% block page_sub %}الخطوة 3 من 4 — راجع النص وعدّله إذا لزم، ثم ارفع القالب{% endblock %}
+
+{% block content %}
+
+<!-- Steps bar -->
+<div class="steps-bar">
+  <div class="step-item">
+    <div class="step-circle done"><i class="bi bi-check"></i></div>
+    <span class="step-label done">نوع المستند</span>
+  </div>
+  <div class="step-line done"></div>
+  <div class="step-item">
+    <div class="step-circle done"><i class="bi bi-check"></i></div>
+    <span class="step-label done">البيانات والمسودة</span>
+  </div>
+  <div class="step-line done"></div>
+  <div class="step-item">
+    <div class="step-circle active">3</div>
+    <span class="step-label active">مراجعة النص</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item">
+    <div class="step-circle">4</div>
+    <span class="step-label">رفع القالب وتنزيل</span>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Preview -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="card-icon"><i class="bi bi-file-text"></i></div>
+          <div>
+            <h2>النص المُولَّد</h2>
+            <p>يمكنك التعديل مباشرة في الحقل أدناه</p>
+          </div>
+        </div>
+        <button type="button" class="btn-ghost" id="regen-btn" style="font-size:13px;padding:8px 14px;" onclick="regenerate()">
+          <i class="bi bi-arrow-repeat"></i> إعادة التوليد
+        </button>
+      </div>
+      <div class="card-body-p">
+
+        <!-- Header section (read-only display) -->
+        <div style="background:#f4f7fc;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:2;direction:rtl;">
+          <strong>الراسل:</strong> {{ sender }}<br>
+          <strong>المرسل إليه:</strong> {{ recipient }}<br>
+          <strong>الموضوع:</strong> {{ subject }}
+        </div>
+
+        <!-- Editable body -->
+        <label class="field-label">جسم المستند (قابل للتعديل)</label>
+        <textarea id="body-editor" class="field-textarea" rows="14" style="font-size:15px;line-height:2;">{{ generated_body }}</textarea>
+
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;">
+          <i class="bi bi-pencil"></i> عدّل النص حسب الحاجة قبل الانتقال للخطوة التالية
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info + finalize -->
+  <div class="col-lg-5">
+
+    <!-- Model info -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon"><i class="bi bi-cpu"></i></div>
+        <div>
+          <h2>معلومات التوليد</h2>
+          <p>النموذج المستخدم</p>
+        </div>
+      </div>
+      <div class="card-body-p">
+        <div style="background:var(--bg);border-radius:8px;padding:12px 14px;font-size:12px;font-family:'DM Mono',monospace;color:var(--blue);word-break:break-all;">
+          {{ model }}
+        </div>
+        <div style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.7;">
+          <i class="bi bi-info-circle"></i>
+          النص المولَّد بالأعلى سيُدمج تلقائياً مع بيانات المرسل والموضوع والتوقيع عند إنشاء ملف Word.
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload & finalize form -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon"><i class="bi bi-cloud-upload"></i></div>
+        <div>
+          <h2>الخطوة 4 — رفع القالب</h2>
+          <p>ارفع ملف .docx الذي يحتوي {{CODE_NUMBER}} و{{BODY_TEXT}}</p>
+        </div>
+      </div>
+      <div class="card-body-p">
+        <form method="POST" action="{{ url_for('step4') }}" enctype="multipart/form-data" id="finalize-form">
+          <!-- Hidden carry-over fields -->
+          <input type="hidden" name="doc_type"   value="{{ doc_type }}" />
+          <input type="hidden" name="sender"     value="{{ sender }}" />
+          <input type="hidden" name="recipient"  value="{{ recipient }}" />
+          <input type="hidden" name="subject"    value="{{ subject }}" />
+          <input type="hidden" name="raw_draft"  value="{{ raw_draft }}" />
+          <input type="hidden" name="model"      value="{{ model }}" />
+          <input type="hidden" name="full_body"  id="full-body-hidden" value="{{ full_body }}" />
+
+          <div class="upload-zone" id="drop-zone">
+            <input type="file" name="docx_file" id="docx-file" accept=".docx" required />
+            <i class="bi bi-file-earmark-word" style="font-size:36px;color:var(--blue);display:block;margin-bottom:10px;"></i>
+            <div style="font-size:14px;font-weight:700;color:var(--navy);">اسحب ملف القالب هنا</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">أو انقر للاختيار — .docx فقط</div>
+          </div>
+
+          <div id="file-name" style="display:none;margin-top:10px;background:var(--light);border-radius:6px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--blue);">
+            <i class="bi bi-file-earmark-word-fill"></i> <span id="fname"></span>
+          </div>
+
+          <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn-gold" id="final-btn" disabled onclick="showOverlay()">
+              <i class="bi bi-lightning-charge-fill"></i> إنشاء المستند
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <a href="{{ url_for('step2', doc_type=doc_type) }}" class="btn-ghost">
+      <i class="bi bi-arrow-right"></i> رجوع لتعديل البيانات
+    </a>
+
+  </div>
+</div>
+
+<style>
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: #fafcff;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.over { border-color: var(--accent); background: var(--light); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const bodyEditor  = document.getElementById('body-editor');
+  const fullHidden  = document.getElementById('full-body-hidden');
+  const finalBtn    = document.getElementById('final-btn');
+  const fileInput   = document.getElementById('docx-file');
+  const fileNameDiv = document.getElementById('file-name');
+  const fNameSpan   = document.getElementById('fname');
+  const dropZone    = document.getElementById('drop-zone');
+
+  const sender    = {{ sender|tojson }};
+  const recipient = {{ recipient|tojson }};
+  const subject   = {{ subject|tojson }};
+  const docType   = {{ doc_type|tojson }};
+  const model     = {{ model|tojson }};
+  const signatory = "مدير مركز الخدمات الإلكترونية – كلية الهندسة\nالأستاذ(م) الدكتور/ محمد كمال عبد السلام";
+
+  function buildFull(bodyText) {
+    return [
+      `الراســــــــل: ${sender}`,
+      `المرسل إليه: ${recipient}`,
+      `الموضـــوع: ${subject}`,
+      '',
+      '',
+      bodyText,
+      '',
+      '',
+      signatory,
+    ].join('\n');
+  }
+
+  // Sync editor → hidden field on every keystroke
+  bodyEditor.addEventListener('input', () => {
+    fullHidden.value = buildFull(bodyEditor.value);
+  });
+
+  // File pick
+  function handleFile(file) {
+    if (!file) return;
+    fNameSpan.textContent = file.name;
+    fileNameDiv.style.display = 'block';
+    finalBtn.disabled = false;
+  }
+
+  fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.endsWith('.docx')) {
+      const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      handleFile(f);
+    }
+  });
+
+  // Regenerate via AJAX
+  async function regenerate() {
+    const btn = document.getElementById('regen-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> جاري التوليد...';
+    document.getElementById('ai-overlay').classList.add('show');
+
+    try {
+      const resp = await fetch('/api/regenerate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          doc_type: docType, sender, recipient, subject,
+          raw_draft: {{ raw_draft|tojson }},
+          model,
+        })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        bodyEditor.value  = data.body;
+        fullHidden.value  = data.full_body;
+      } else {
+        alert('خطأ: ' + data.error);
+      }
+    } catch(e) {
+      alert('فشل الاتصال بالخادم');
+    } finally {
+      document.getElementById('ai-overlay').classList.remove('show');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> إعادة التوليد';
+    }
+  }
+
+  function showOverlay() {
+    document.getElementById('ai-overlay').classList.add('show');
+  }
+</script>
+{% endblock %}
