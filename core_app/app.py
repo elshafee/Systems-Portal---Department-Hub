@@ -904,9 +904,15 @@ def update_document_tracking(doc_id):
         return redirect(request.referrer or url_for('tracking'))
 
     is_sent = request.form.get("is_sent") in ("1", "true", "on")
+    response_status = request.form.get("response_status", "").strip()
+
+    # If the user selected 'received' or 'awaiting_response' or specified sent_date, infer that it is sent
+    sent_date_val = request.form.get("sent_date", "").strip()
+    if response_status in ("received", "awaiting_response") or (sent_date_val and is_sent is not False):
+        is_sent = True
+
     doc.is_sent = is_sent
 
-    sent_date_val = request.form.get("sent_date", "").strip()
     if sent_date_val:
         try:
             doc.sent_date = datetime.strptime(sent_date_val, "%Y-%m-%d")
@@ -926,6 +932,8 @@ def update_document_tracking(doc_id):
     doc.sent_notes = request.form.get("sent_notes", "").strip() or None
 
     requires_response = request.form.get("requires_response") in ("1", "true", "on")
+    if response_status in ("awaiting_response", "received"):
+        requires_response = True
     doc.requires_response = requires_response
 
     deadline_val = request.form.get("response_deadline", "").strip()
@@ -937,8 +945,7 @@ def update_document_tracking(doc_id):
     elif not requires_response:
         doc.response_deadline = None
 
-    response_status = request.form.get("response_status", "").strip()
-    if not is_sent:
+    if not is_sent and not response_status:
         response_status = "not_sent"
     elif not response_status:
         response_status = "awaiting_response" if requires_response else "no_response_needed"

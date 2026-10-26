@@ -709,6 +709,35 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
+  // Dynamic switch synchronization inside tracking modals
+  document.querySelectorAll('[id^="statusSelect"]').forEach(function(selectEl) {
+    const docId = selectEl.id.replace('statusSelect', '');
+    const sentSwitch = document.getElementById('isSentSwitch' + docId);
+    const reqSwitch = document.getElementById('reqRespSwitch' + docId);
+
+    selectEl.addEventListener('change', function() {
+      if (this.value === 'received' || this.value === 'awaiting_response') {
+        if (sentSwitch) sentSwitch.checked = true;
+        if (reqSwitch) reqSwitch.checked = true;
+      } else if (this.value === 'no_response_needed') {
+        if (sentSwitch) sentSwitch.checked = true;
+        if (reqSwitch) reqSwitch.checked = false;
+      } else if (this.value === 'not_sent') {
+        if (sentSwitch) sentSwitch.checked = false;
+      }
+    });
+
+    if (sentSwitch) {
+      sentSwitch.addEventListener('change', function() {
+        if (this.checked && selectEl.value === 'not_sent') {
+          selectEl.value = (reqSwitch && reqSwitch.checked) ? 'awaiting_response' : 'no_response_needed';
+        } else if (!this.checked) {
+          selectEl.value = 'not_sent';
+        }
+      });
+    }
+  });
+
   const searchInput = document.getElementById("trackSearch");
   const filterBtns = document.querySelectorAll(".tracking-filter-btn");
   const rows = document.querySelectorAll("tr.tracking-row");
