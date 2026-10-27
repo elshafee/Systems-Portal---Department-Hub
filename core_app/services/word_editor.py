@@ -435,14 +435,6 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
 
                         p_dir = p_data.get('direction', 'rtl')
                         p_align = p_data.get('alignment', 'right' if p_dir == 'rtl' else 'left')
-                        if p_align == 'center':
-                            current_p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                        elif p_align == 'left':
-                            current_p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-                        elif p_align == 'justify':
-                            current_p.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-                        else:
-                            current_p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
                         fmt = current_p.paragraph_format
                         fmt.space_before = Pt(0)
@@ -460,9 +452,24 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             fmt.space_before = Pt(3)
                             fmt.space_after = Pt(2)
 
+                        # Set paragraph properties in strict OpenXML schema order:
+                        # 1. w:bidi (must be before w:jc and w:rPr)
+                        # 2. w:jc
+                        # 3. w:rPr
+                        p_rPr = pPr.find(qn('w:rPr'))
+                        if p_rPr is not None:
+                            pPr.remove(p_rPr)
+
                         bidi = OxmlElement('w:bidi')
                         bidi.set(qn('w:val'), '1' if p_dir == 'rtl' else '0')
                         pPr.append(bidi)
+
+                        jc = OxmlElement('w:jc')
+                        jc.set(qn('w:val'), p_align)
+                        pPr.append(jc)
+
+                        if p_rPr is not None:
+                            pPr.append(p_rPr)
                         
                         for run_info in p_data.get('runs', []):
                             text_part = run_info['text']
