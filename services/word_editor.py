@@ -102,6 +102,108 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str):
     doc.save(output_path)
 
 
+def process_reserve_document(input_path: str, output_path: str, full_code: str):
+    """
+    Opens a .docx template when reserving a serial number.
+    Replaces {{CODE_NUMBER}} with full_code.
+    Replaces {{ESSIC}}, {{HUEED}}, {{AIE}} with empty string.
+    Replaces all other placeholders ({{SEND_TO}}, {{SUBJECT}}, {{STACK_HOLDER}},
+    {{POSITION}}, {{BODY_TEXT}}, {{SENDER}}, {{SENDER_TOP}}, etc.) with an empty single space " ".
+    Preserves all paragraphs and layout intact without deleting empty lines.
+    """
+    import re
+    doc = Document(input_path)
+
+    def _clean_text(text: str):
+        if not text:
+            return text, False
+        modified = False
+        if re.search(r'\{\{\s*CODE_NUMBER\s*\}\}', text):
+            text = re.sub(r'\{\{\s*CODE_NUMBER\s*\}\}', full_code, text)
+            modified = True
+        for office_tag in ['ESSIC', 'HUEED', 'AIE']:
+            pattern = r'\{\{\s*' + re.escape(office_tag) + r'\s*\}\}'
+            if re.search(pattern, text):
+                text = re.sub(pattern, '', text)
+                modified = True
+        if re.search(r'\{\{\s*[A-Za-z0-9_]+\s*\}\}', text):
+            text = re.sub(r'\{\{\s*[A-Za-z0-9_]+\s*\}\}', ' ', text)
+            modified = True
+        return text, modified
+
+    def _process_p(p):
+        full_text = "".join(r.text for r in p.runs)
+        new_text, modified = _clean_text(full_text)
+        if modified:
+            if p.runs:
+                p.runs[0].text = new_text
+                for r in p.runs[1:]:
+                    r.text = ""
+
+    for p in doc.paragraphs:
+        _process_p(p)
+
+    def _process_t(table):
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    _process_p(p)
+                for nested_table in cell.tables:
+                    _process_t(nested_table)
+
+    for table in doc.tables:
+        _process_t(table)
+
+    for section in doc.sections:
+        for part in [section.header, section.footer, section.even_page_header, section.even_page_footer, section.first_page_header, section.first_page_footer]:
+            if part is not None:
+                for p in part.paragraphs:
+                    _process_p(p)
+                for t in part.tables:
+                    _process_t(t)
+
+    doc.save(output_path)
+
+
+def update_code_in_docx(file_path: str, old_code: str, new_code: str):
+    """
+    Replaces old_code with new_code across paragraphs, tables, headers, footers in file_path.
+    """
+    if not old_code or old_code == new_code or not os.path.exists(file_path):
+        return
+    doc = Document(file_path)
+
+    def _replace_in_p(p):
+        full = "".join(r.text for r in p.runs)
+        if old_code in full:
+            new_t = full.replace(old_code, new_code)
+            if p.runs:
+                p.runs[0].text = new_t
+                for r in p.runs[1:]:
+                    r.text = ""
+
+    def _replace_in_t(table):
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    _replace_in_p(p)
+                for nested in cell.tables:
+                    _replace_in_t(nested)
+
+    for p in doc.paragraphs:
+        _replace_in_p(p)
+    for t in doc.tables:
+        _replace_in_t(t)
+    for sec in doc.sections:
+        for part in [sec.header, sec.footer, sec.even_page_header, sec.even_page_footer, sec.first_page_header, sec.first_page_footer]:
+            if part is not None:
+                for p in part.paragraphs:
+                    _replace_in_p(p)
+                for t in part.tables:
+                    _replace_in_t(t)
+    doc.save(file_path)
+
+
 def replace_placeholders(input_path: str, output_path: str, replacements: dict, remove_manager_sig: bool = False, tables_data: list = None, image_paths: list = None, table_data: list = None, image_sizes: list = None, **kwargs):
     """
     Opens a .docx file, replaces multiple occurrences of keys in `replacements` dict
@@ -789,3 +891,277 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         _replace_in_hf(section.first_page_footer)
 
     doc.save(output_path)
+
+
+def clean_bidi(text: str) -> str:
+    """Remove Unicode directional marks and clean text."""
+    if not text:
+        return ""
+    return re.sub(r'[\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]', '', text).strip()
+
+
+def normalize_label(text: str) -> str:
+    """Normalize Arabic text for reliable label matching."""
+    cleaned = clean_bidi(text)
+    cleaned = re.sub(r'[\u0640]', '', cleaned)
+    cleaned = re.sub(r'[:\-—/\\.]', ' ', cleaned)
+    cleaned = re.sub(r'[إأآا]', 'ا', cleaned)
+    cleaned = re.sub(r'[ة]', 'ه', cleaned)
+    cleaned = re.sub(r'[ى]', 'ي', cleaned)
+    return re.sub(r'\s+', ' ', cleaned).strip().lower()
+
+
+def is_placeholder(val: str) -> bool:
+    """Check if value is a meaningless placeholder returned by AI or empty."""
+    if not val:
+        return True
+    norm = normalize_label(val)
+    placeholders = {
+        'غير مذكور', 'غير محدد', 'غير معرف', 'لا يوجد', 'بدون', 'لايوجد',
+        'none', 'null', 'n/a', 'not specified', 'not mentioned', '-', '--', '...', 'مجهول'
+    }
+    return norm in placeholders or any(p == norm for p in placeholders)
+
+
+def extract_document_details(file_or_path, user_email: str = None, default_sender: str = ""):
+    """
+    Extract structured fields and tables from a Word document (.docx).
+    Works for official templates (e.g. ESSIC, AIE, Vice Dean) and external documents.
+    Extracts:
+      - sender (الراسل)
+      - recipient (المرسل إليه)
+      - subject (الموضوع)
+      - holder_name (عناية ...)
+      - position (الصفة)
+      - full_body (النص المجرد)
+      - full_body_html (النص بتنسيق الألوان والفقرات)
+      - tables_data (الجداول غير الترويسية/التوقيعية)
+    """
+    import html
+    import logging
+    logger = logging.getLogger(__name__)
+
+    if hasattr(file_or_path, 'seek'):
+        file_or_path.seek(0)
+
+    doc = Document(file_or_path)
+
+    fields = {
+        'sender': '',
+        'recipient': '',
+        'subject': '',
+        'holder_name': '',
+        'position': '',
+        'full_body': '',
+        'full_body_html': ''
+    }
+    tables_data = []
+
+    # 1. Inspect tables
+    for t_idx, table in enumerate(doc.tables):
+        is_metadata_table = False
+        is_signature_table = False
+        is_logo_table = (t_idx == 0 and len(table.rows) <= 2 and len(table.columns) <= 3)
+
+        # Signature check
+        for row in table.rows:
+            for c in row.cells:
+                norm_c = normalize_label(c.text)
+                if any(k in norm_c for k in ['رئيس قسم', 'وكيل كليه', 'مدير مركز', 'عميد الكليه', 'محمد كمال عبد السلام', 'مقدمه لسيادتكم']):
+                    is_signature_table = True
+                    break
+            if is_signature_table:
+                break
+
+        # Metadata table check (col 0 = value, col 1 = label OR vice versa)
+        for row in table.rows:
+            cell_texts = [clean_bidi(c.text) for c in row.cells]
+            if len(row.cells) >= 2:
+                c0_norm = normalize_label(cell_texts[0])
+                c1_norm = normalize_label(cell_texts[1])
+
+                label_cell = None
+                val_cell = None
+
+                if any(k in c1_norm for k in ['راسل', 'مرسل', 'موضوع', 'شان', 'عنايه', 'صفه', 'منصب', 'وظيفه']):
+                    label_cell = c1_norm
+                    val_cell = cell_texts[0]
+                elif any(k in c0_norm for k in ['راسل', 'مرسل', 'موضوع', 'شان', 'عنايه', 'صفه', 'منصب', 'وظيفه']):
+                    label_cell = c0_norm
+                    val_cell = ' '.join(cell_texts[1:])
+
+                if label_cell and val_cell:
+                    is_metadata_table = True
+                    # Check recipient before sender because "المرسل إليه" contains "المرسل"
+                    if 'مرسل اليه' in label_cell or ('مرسل' in label_cell and 'الي' in label_cell) or label_cell == 'الي':
+                        if not fields['recipient']:
+                            fields['recipient'] = val_cell
+                    elif 'راسل' in label_cell or ('مرسل' in label_cell and 'الي' not in label_cell):
+                        if not fields['sender']:
+                            fields['sender'] = val_cell
+                    elif 'موضوع' in label_cell or 'شان' in label_cell:
+                        if not fields['subject']:
+                            fields['subject'] = val_cell
+                    elif 'عنايه' in label_cell:
+                        if not fields['holder_name']:
+                            fields['holder_name'] = val_cell
+                    elif any(k in label_cell for k in ['صفه', 'منصب', 'وظيفه']):
+                        if not fields['position']:
+                            fields['position'] = val_cell
+
+        if not is_metadata_table and not is_signature_table and not is_logo_table:
+            tbl_rows = []
+            for row in table.rows:
+                row_vals = [clean_bidi(c.text) for c in row.cells]
+                if any(row_vals):
+                    tbl_rows.append(row_vals)
+            if tbl_rows:
+                tables_data.append(tbl_rows)
+
+    # 2. Inspect paragraphs
+    body_paragraphs_plain = []
+    body_paragraphs_html = []
+    found_greeting = False
+    passed_header = False
+
+    for p in doc.paragraphs:
+        txt = clean_bidi(p.text)
+        if not txt:
+            continue
+        clean_line = re.sub(r'[\u0640]', '', txt)
+        norm_txt = normalize_label(txt)
+
+        # Skip Ref / Code line
+        if re.search(r'(?:ref|code)\s*no\s*[:.]?', norm_txt, re.IGNORECASE) or norm_txt.startswith('ref no') or norm_txt.startswith('code no'):
+            continue
+
+        # Check inline label: value
+        m_recip = re.match(r'^(?:المرسل\s*إليه|المرسل\s*اليه|إلى|إلي)\s*[:\-]\s*(.*)$', clean_line)
+        if m_recip and not fields['recipient']:
+            fields['recipient'] = clean_bidi(m_recip.group(1))
+            continue
+
+        m_sender = re.match(r'^(?:الراسل|المرسل)\s*[:\-]\s*(.*)$', clean_line)
+        if m_sender and not fields['sender']:
+            fields['sender'] = clean_bidi(m_sender.group(1))
+            continue
+
+        m_subj = re.match(r'^(?:الموضوع|بشأن|بخصوص)\s*[:\-]\s*(.*)$', clean_line)
+        if m_subj and not fields['subject']:
+            fields['subject'] = clean_bidi(m_subj.group(1))
+            continue
+
+        # Check عناية
+        if 'عنايه' in norm_txt:
+            passed_header = True
+            m_holder = re.search(r'عناي[هة]\s*(?:السيد(?:\s*الاستاذ)?(?:\s*الدكتور)?\s*[/:\-]?\s*)?(.*)', clean_line)
+            if m_holder and not fields['holder_name']:
+                fields['holder_name'] = clean_bidi(m_holder.group(1))
+            continue
+
+        # Check greeting
+        if 'تحيه طيبه وبعد' in norm_txt:
+            found_greeting = True
+            passed_header = True
+            continue
+
+        # Check sign-offs
+        if any(s in norm_txt for s in ['وتفضلوا بقبول', 'فائق الاحترام', 'مع وافر الاحترام', 'شاكرين لسيادتكم', 'شاكرين حسن تعاونكم']):
+            break
+
+        # Check signatures
+        if any(s in norm_txt for s in ['مدير مركز', 'وكيل كليه', 'رئيس قسم', 'محمد كمال عبد السلام', 'مقدمه لسيادتكم']):
+            break
+
+        # Position line under عناية before greeting
+        if passed_header and not found_greeting and not fields['position']:
+            if len(txt.split()) <= 6 and any(pos in norm_txt for pos in ['استاذ', 'عميد', 'وكيل', 'رئيس', 'مدير', 'مهندس', 'دكتور', 'مدرس']):
+                fields['position'] = txt
+                continue
+
+        # Body paragraphs
+        if found_greeting or passed_header:
+            body_paragraphs_plain.append(txt)
+            p_runs_html = []
+            for run in p.runs:
+                r_txt = clean_bidi(run.text)
+                if not r_txt:
+                    continue
+                escaped = html.escape(r_txt)
+                color_hex = None
+                if run.font and run.font.color and run.font.color.rgb:
+                    color_hex = f'#{run.font.color.rgb}'
+
+                style_parts = []
+                if color_hex:
+                    style_parts.append(f'color:{color_hex}')
+
+                run_tag = escaped
+                if style_parts:
+                    run_tag = f'<span style="{";".join(style_parts)}">{run_tag}</span>'
+                if run.bold:
+                    run_tag = f'<strong>{run_tag}</strong>'
+                if run.italic:
+                    run_tag = f'<em>{run_tag}</em>'
+                if run.underline:
+                    run_tag = f'<u>{run_tag}</u>'
+                p_runs_html.append(run_tag)
+
+            if p_runs_html:
+                body_paragraphs_html.append(f'<p dir="rtl" style="text-align: right;">{"".join(p_runs_html)}</p>')
+            else:
+                body_paragraphs_html.append(f'<p dir="rtl" style="text-align: right;">{html.escape(txt)}</p>')
+
+    # 3. Clean placeholders from initial extraction
+    for k in fields:
+        if is_placeholder(fields[k]):
+            fields[k] = ''
+
+    # 4. If key fields or body are missing (unstructured document), fall back to AI
+    if not fields['recipient'] or not fields['subject'] or not body_paragraphs_plain:
+        try:
+            full_text_parts = []
+            for ti, table in enumerate(doc.tables):
+                t_lines = []
+                for row in table.rows:
+                    row_str = " | ".join(clean_bidi(c.text) for c in row.cells if clean_bidi(c.text))
+                    if row_str:
+                        t_lines.append(row_str)
+                if t_lines:
+                    full_text_parts.append("\n".join(t_lines))
+
+            for p in doc.paragraphs:
+                pt = clean_bidi(p.text)
+                if pt:
+                    full_text_parts.append(pt)
+
+            combined_text = "\n\n".join(full_text_parts)
+            if combined_text.strip():
+                from services.ai_generator import extract_document_fields
+                ai_fields = extract_document_fields(combined_text, user_email or "")
+                if ai_fields and isinstance(ai_fields, dict):
+                    for k in ["recipient", "subject", "holder_name", "position", "sender", "full_body"]:
+                        val = ai_fields.get(k, "")
+                        if not fields.get(k) and val and not is_placeholder(val):
+                            fields[k] = val
+        except Exception as ai_err:
+            logger.warning(f"AI fallback extraction failed: {ai_err}")
+
+    # 5. Final fallback assignments
+    if not fields['full_body'] and body_paragraphs_plain:
+        fields['full_body'] = '\n'.join(body_paragraphs_plain)
+
+    if not fields['full_body_html'] and body_paragraphs_html:
+        fields['full_body_html'] = ''.join(body_paragraphs_html)
+
+    if fields['full_body'] and not fields['full_body_html']:
+        fields['full_body_html'] = ''.join(f'<p dir="rtl" style="text-align: right;">{html.escape(l)}</p>' for l in fields['full_body'].split('\n') if l.strip())
+
+    if not fields['sender'] and default_sender and not is_placeholder(default_sender):
+        fields['sender'] = default_sender
+
+    for k in fields:
+        if is_placeholder(fields[k]):
+            fields[k] = ''
+
+    return fields, tables_data

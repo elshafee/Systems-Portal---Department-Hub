@@ -7,8 +7,8 @@ import os
 import sys
 
 # Ensure current and parent dirs are on sys.path
-sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(__file__))
 
 from app import app, db, Document, User, Contact, KeepAlive  # noqa: F401
 

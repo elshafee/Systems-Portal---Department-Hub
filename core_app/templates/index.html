@@ -257,6 +257,8 @@
                         <form method="POST" id="direct-form" enctype="multipart/form-data"
                             style="direction: rtl; text-align: right;">
                             <input type="hidden" name="action_type" value="direct_template">
+                            <input type="hidden" name="use_preview_file" id="direct_use_preview_file" value="0">
+                            <input type="hidden" name="preview_hash" id="direct_preview_hash" value="">
 
                             <div class="form-group mb-3">
                                 <label class="form-label" style="font-weight:600;color:#0f2744;">عنوان الملف (File
@@ -628,6 +630,8 @@
 
                 <form method="POST" enctype="multipart/form-data" id="upload-form">
                     <input type="hidden" name="action_type" value="upload">
+                    <input type="hidden" name="use_preview_file" id="upload_use_preview_file" value="0">
+                    <input type="hidden" name="preview_hash" id="upload_preview_hash" value="">
                     <!-- File Title -->
                     <div class="form-group mb-3" style="text-align: left;">
                         <label for="file_title" class="form-label" style="font-weight:600;color:#0f2744;">File Title
@@ -931,6 +935,12 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.word_online_url) {
+                        const directUsePrev = document.getElementById('direct_use_preview_file');
+                        const directPrevHash = document.getElementById('direct_preview_hash');
+                        if (directUsePrev) directUsePrev.value = "1";
+                        if (directPrevHash && data.form_hash) directPrevHash.value = data.form_hash;
+                        window.hasDashboardChangedSincePreview = false;
+
                         try {
                             window.open(data.word_online_url, '_blank');
                         } catch (e) {
@@ -951,7 +961,7 @@
                                 </a>
                                 <div class="alert alert-light border text-start p-3 mt-2" style="max-width: 550px; border-radius: 10px; font-size: 13px; margin: 0 auto;">
                                     <i class="bi bi-info-circle-fill text-info me-2"></i>
-                                    عند الانتهاء من المعاينة، اضغط <strong>"تأكيد وحفظ" (Confirm & Save)</strong> بالأسفل لاعتماد الرقم وتنزيل المستند.
+                                    عند الانتهاء من المعاينة والتعديل في Word Online، اضغط <strong>"تأكيد وحفظ" (Confirm & Save)</strong> بالأسفل لاعتماد الرقم وحفظ تعديلاتك النهائية.
                                 </div>
                             </div>`;
                         if (printPreviewBtn) printPreviewBtn.style.display = 'none';
@@ -1008,10 +1018,22 @@
             if (typeof syncEditorToHidden === "function") {
                 syncEditorToHidden();
             }
-            if (activeFormForPreview) {
-                activeFormForPreview.submit();
-            } else {
+            if (activeFormForPreview === directForm || !activeFormForPreview) {
+                const directUsePrev = document.getElementById('direct_use_preview_file');
+                if (directUsePrev) {
+                    if (window.hasDashboardChangedSincePreview === false) {
+                        directUsePrev.value = "1";
+                    } else {
+                        directUsePrev.value = "0";
+                    }
+                }
                 directForm.submit();
+            } else if (activeFormForPreview) {
+                const uploadUsePrev = document.getElementById('upload_use_preview_file');
+                if (uploadUsePrev && window.hasUploadChangedSincePreview === false) {
+                    uploadUsePrev.value = "1";
+                }
+                activeFormForPreview.submit();
             }
         });
     }
@@ -1034,6 +1056,12 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.word_online_url) {
+                        const uploadUsePrev = document.getElementById('upload_use_preview_file');
+                        const uploadPrevHash = document.getElementById('upload_preview_hash');
+                        if (uploadUsePrev) uploadUsePrev.value = "1";
+                        if (uploadPrevHash && data.form_hash) uploadPrevHash.value = data.form_hash;
+                        window.hasUploadChangedSincePreview = false;
+
                         try {
                             window.open(data.word_online_url, '_blank');
                         } catch (e) {
@@ -1054,7 +1082,7 @@
                                 </a>
                                 <div class="alert alert-light border text-start p-3 mt-2" style="max-width: 550px; border-radius: 10px; font-size: 13px; margin: 0 auto;">
                                     <i class="bi bi-info-circle-fill text-info me-2"></i>
-                                    عند الانتهاء من المعاينة، اضغط <strong>"تأكيد وحفظ" (Confirm & Save)</strong> بالأسفل لاعتماد الرقم وتنزيل المستند.
+                                    عند الانتهاء من المعاينة والتعديل في Word Online، اضغط <strong>"تأكيد وحفظ" (Confirm & Save)</strong> بالأسفل لاعتماد الرقم وحفظ تعديلاتك النهائية.
                                 </div>
                             </div>`;
                         if (printPreviewBtn) printPreviewBtn.style.display = 'none';
@@ -1101,11 +1129,15 @@
                         setBodyContent(data.text);
 
                         if (data.fields) {
-                            if (data.fields.recipient) directForm.querySelector('[name="recipient"]').value = data.fields.recipient;
-                            if (data.fields.subject) directForm.querySelector('[name="subject"]').value = data.fields.subject;
-                            if (data.fields.holder_name) directForm.querySelector('[name="holder_name"]').value = data.fields.holder_name;
-                            if (data.fields.position) directForm.querySelector('[name="position"]').value = data.fields.position;
-                            if (data.fields.sender) directForm.querySelector('[name="sender"]').value = data.fields.sender;
+                            if (data.fields.recipient !== undefined && data.fields.recipient !== null) directForm.querySelector('[name="recipient"]').value = data.fields.recipient;
+                            if (data.fields.subject !== undefined && data.fields.subject !== null) directForm.querySelector('[name="subject"]').value = data.fields.subject;
+                            if (data.fields.holder_name !== undefined && data.fields.holder_name !== null) directForm.querySelector('[name="holder_name"]').value = data.fields.holder_name;
+                            if (data.fields.position !== undefined && data.fields.position !== null) directForm.querySelector('[name="position"]').value = data.fields.position;
+                            if (data.fields.sender !== undefined && data.fields.sender !== null) directForm.querySelector('[name="sender"]').value = data.fields.sender;
+                        }
+
+                        if (data.tables_data && data.tables_data.length > 0) {
+                            populateExtractedTables(data.tables_data);
                         }
 
                         const tabBtn = document.getElementById('direct-tab');
@@ -1114,6 +1146,7 @@
                             const tab = new bootstrap.Tab(tabBtn);
                             tab.show();
                         }
+                        syncLivePreview();
                     } else {
                         alert('Extraction failed: ' + data.error);
                     }
@@ -1160,11 +1193,15 @@
                         setBodyContent(data.text);
 
                         if (data.fields) {
-                            if (data.fields.recipient) directForm.querySelector('[name="recipient"]').value = data.fields.recipient;
-                            if (data.fields.subject) directForm.querySelector('[name="subject"]').value = data.fields.subject;
-                            if (data.fields.holder_name) directForm.querySelector('[name="holder_name"]').value = data.fields.holder_name;
-                            if (data.fields.position) directForm.querySelector('[name="position"]').value = data.fields.position;
-                            if (data.fields.sender) directForm.querySelector('[name="sender"]').value = data.fields.sender;
+                            if (data.fields.recipient !== undefined && data.fields.recipient !== null) directForm.querySelector('[name="recipient"]').value = data.fields.recipient;
+                            if (data.fields.subject !== undefined && data.fields.subject !== null) directForm.querySelector('[name="subject"]').value = data.fields.subject;
+                            if (data.fields.holder_name !== undefined && data.fields.holder_name !== null) directForm.querySelector('[name="holder_name"]').value = data.fields.holder_name;
+                            if (data.fields.position !== undefined && data.fields.position !== null) directForm.querySelector('[name="position"]').value = data.fields.position;
+                            if (data.fields.sender !== undefined && data.fields.sender !== null) directForm.querySelector('[name="sender"]').value = data.fields.sender;
+                        }
+
+                        if (data.tables_data && data.tables_data.length > 0) {
+                            populateExtractedTables(data.tables_data);
                         }
 
                         // Switch to Direct Tab
@@ -1173,6 +1210,8 @@
                             const tab = new bootstrap.Tab(tabBtn);
                             tab.show();
                         }
+
+                        syncLivePreview();
 
                         // Automatically trigger the direct form preview after a small delay to allow DOM/tab update
                         setTimeout(() => {
@@ -1198,8 +1237,41 @@
         });
     }
 
+    window.hasDashboardChangedSincePreview = true;
+    window.hasUploadChangedSincePreview = true;
+
     if (directForm) {
+        directForm.addEventListener('input', (e) => {
+            if (e.target && (e.target.id === 'direct_use_preview_file' || e.target.id === 'direct_preview_hash')) return;
+            window.hasDashboardChangedSincePreview = true;
+            const directUsePrev = document.getElementById('direct_use_preview_file');
+            if (directUsePrev) directUsePrev.value = "0";
+        });
+        directForm.addEventListener('change', (e) => {
+            if (e.target && (e.target.id === 'direct_use_preview_file' || e.target.id === 'direct_preview_hash')) return;
+            window.hasDashboardChangedSincePreview = true;
+            const directUsePrev = document.getElementById('direct_use_preview_file');
+            if (directUsePrev) directUsePrev.value = "0";
+        });
+
         directForm.addEventListener('submit', () => {
+            if (typeof updateDirectTableData === "function") {
+                updateDirectTableData();
+            }
+            if (typeof updateImageSizes === "function") {
+                updateImageSizes();
+            }
+            if (typeof syncEditorToHidden === "function") {
+                syncEditorToHidden();
+            }
+            const directUsePrev = document.getElementById('direct_use_preview_file');
+            if (directUsePrev) {
+                if (window.hasDashboardChangedSincePreview === false) {
+                    directUsePrev.value = "1";
+                } else {
+                    directUsePrev.value = "0";
+                }
+            }
             const directSubmitBtn = document.getElementById('direct-submit-btn');
             directSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
             directSubmitBtn.disabled = true;
@@ -1210,6 +1282,22 @@
                 directSubmitBtn.disabled = false;
                 if (previewBtn) previewBtn.disabled = false;
             }, 3000);
+        });
+    }
+
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('input', (e) => {
+            if (e.target && (e.target.id === 'upload_use_preview_file' || e.target.id === 'upload_preview_hash')) return;
+            window.hasUploadChangedSincePreview = true;
+            const uploadUsePrev = document.getElementById('upload_use_preview_file');
+            if (uploadUsePrev) uploadUsePrev.value = "0";
+        });
+        uploadForm.addEventListener('change', (e) => {
+            if (e.target && (e.target.id === 'upload_use_preview_file' || e.target.id === 'upload_preview_hash')) return;
+            window.hasUploadChangedSincePreview = true;
+            const uploadUsePrev = document.getElementById('upload_use_preview_file');
+            if (uploadUsePrev) uploadUsePrev.value = "0";
         });
     }
 
@@ -1367,6 +1455,45 @@
     function removeTableBuilder(btn) {
         btn.closest('.dynamic-table-container').remove();
         updateTableLabels();
+    }
+
+    function populateExtractedTables(tablesData) {
+        if (!tablesData || !Array.isArray(tablesData) || tablesData.length === 0) return;
+        const container = document.getElementById('table-builders-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        tablesData.forEach((tableRows) => {
+            if (!tableRows || tableRows.length === 0) return;
+            addNewTableBuilder();
+            const containers = document.querySelectorAll('.dynamic-table-container');
+            const latestContainer = containers[containers.length - 1];
+            if (!latestContainer) return;
+
+            const tbody = latestContainer.querySelector('.dynamic-table tbody');
+            if (!tbody) return;
+
+            let tableHtml = '';
+            tableRows.forEach(row => {
+                tableHtml += '<tr>';
+                row.forEach(cellVal => {
+                    const safeVal = (cellVal || '').replace(/"/g, '&quot;');
+                    const cellHtml = `
+                    <div class="cell-wrapper" style="position:relative;">
+                      <input type="text" class="form-control form-control-sm text-center" value="${safeVal}" placeholder="بيانات...">
+                      <div class="cell-controls" style="display:none; position:absolute; left: -10px; top: -10px; z-index: 10; gap: 2px;">
+                        <button type="button" class="btn btn-xs btn-outline-danger p-0 px-1" onclick="deleteDirectRow(this)" title="حذف الصف">×</button>
+                        <button type="button" class="btn btn-xs btn-outline-danger p-0 px-1" onclick="deleteDirectCol(this)" title="حذف العمود">×</button>
+                      </div>
+                    </div>`;
+                    tableHtml += `<td>${cellHtml}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+            tbody.innerHTML = tableHtml;
+        });
+        updateDirectTableData();
     }
 
     // --- Ribbon Editor Functions ---

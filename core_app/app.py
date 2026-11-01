@@ -457,6 +457,31 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for('login'))
 
+
+def compute_dashboard_form_hash(form_data):
+    """
+    Computes a deterministic MD5 hash of dashboard form fields to determine
+    if the user made any changes in the dashboard after previewing in Word Online.
+    """
+    import hashlib
+    action_type = form_data.get("action_type", "")
+    recipient = form_data.get("recipient", "").strip()
+    subject = form_data.get("subject", "").strip()
+    holder_name = form_data.get("holder_name", "").strip()
+    position = form_data.get("position", "").strip()
+    full_body = form_data.get("full_body", "").strip()
+    sender = form_data.get("sender", "").strip()
+    is_internal = "1" if form_data.get("is_internal") == "1" else "0"
+    manager_is_sender = "1" if form_data.get("manager_is_sender") == "1" else "0"
+    raw_tables = form_data.get("tables_data") or form_data.get("table_data") or ""
+    tables_clean = raw_tables.replace(" ", "").replace("\r", "").replace("\n", "")
+    full_body_clean = full_body.replace("\r", "").replace("\n", "").strip()
+
+    file_title = form_data.get("file_title", "").strip()
+    payload = f"{action_type}|{file_title}|{recipient}|{subject}|{holder_name}|{position}|{full_body_clean}|{sender}|{is_internal}|{manager_is_sender}|{tables_clean}"
+    return hashlib.md5(payload.encode("utf-8")).hexdigest()
+
+
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
@@ -534,116 +559,172 @@ def index():
             
         generated_path = os.path.join(GENERATED_FOLDER, generated_name)
 
+        used_preview_file = False
         try:
-            if action_type == "upload" or action_type == "reserve":
-                replace_placeholder(upload_path, generated_path, full_code)
+            if action_type == "upload":
+                use_preview = request.form.get("use_preview_file") == "1"
+                preview_filename = session.get('last_preview_filename')
+                if use_preview and preview_filename:
+                    from services.onedrive import download_file_from_share
+                    downloaded = download_file_from_share(preview_filename, generated_path, is_preview=True)
+                    if downloaded and os.path.exists(generated_path) and os.path.getsize(generated_path) > 0:
+                        used_preview_file = True
+                    else:
+                        local_prev = os.path.join(PREVIEWS_FOLDER, preview_filename)
+                        if os.path.exists(local_prev) and os.path.getsize(local_prev) > 0:
+                            import shutil
+                            shutil.copyfile(local_prev, generated_path)
+                            used_preview_file = True
+                    if used_preview_file:
+                        from services.word_editor import update_code_in_docx
+                        last_code = session.get('last_preview_code')
+                        if last_code and last_code != full_code:
+                            update_code_in_docx(generated_path, last_code, full_code)
+                        replace_placeholder(generated_path, generated_path, full_code)
+                if not used_preview_file:
+                    replace_placeholder(upload_path, generated_path, full_code)
+
+            elif action_type == "reserve":
+                from services.word_editor import process_reserve_document
+                process_reserve_document(upload_path, generated_path, full_code)
+
             elif action_type == "direct_template":
-                from services.word_editor import replace_placeholders
-                from services.ai_generator import normalize_recipient
-                
-                recipient = request.form.get("recipient", "")
-                subject = request.form.get("subject", "")
-                holder_name = request.form.get("holder_name", "")
-                position = request.form.get("position", "")
-                full_body = request.form.get("full_body", "")
-                sender = request.form.get("sender", "")
-                is_internal = request.form.get("is_internal") == "1"
-                manager_is_sender = request.form.get("manager_is_sender") == "1"
+                use_preview = request.form.get("use_preview_file") == "1"
+                preview_filename = session.get('last_preview_filename')
+                preview_hash = session.get('last_preview_hash')
+                current_hash = compute_dashboard_form_hash(request.form)
 
-                import re
-                def remove_office_code(text):
-                    if not text: return ""
-                    for code in ['ESSIC', 'HUEED', 'AIE']:
-                        text = re.sub(rf'\(\s*{code}\s*\)', '', text, flags=re.IGNORECASE)
-                        text = re.sub(rf'{code}', '', text, flags=re.IGNORECASE)
-                    return text.strip()
+                is_hash_matching = bool(preview_hash and (preview_hash == current_hash or request.form.get("preview_hash") == current_hash))
+                # Use preview file if requested or if preview exists and no changes made in dashboard after preview
+                should_use_preview = bool(preview_filename) and (use_preview or is_hash_matching) and (not preview_hash or is_hash_matching)
 
-                default_sender = curr_office.get('manager_title', '')
-                
-                # Unconditionally remove office text from all text fields
-                recipient = remove_office_code(recipient)
-                subject = remove_office_code(subject)
-                holder_name = remove_office_code(holder_name)
-                position = remove_office_code(position)
-                full_body = remove_office_code(full_body)
-                sender = remove_office_code(sender)
-                default_sender = remove_office_code(default_sender)
+                if should_use_preview:
+                    from services.onedrive import download_file_from_share
+                    downloaded = download_file_from_share(preview_filename, generated_path, is_preview=True)
+                    if downloaded and os.path.exists(generated_path) and os.path.getsize(generated_path) > 0:
+                        used_preview_file = True
+                    else:
+                        local_prev = os.path.join(PREVIEWS_FOLDER, preview_filename)
+                        if os.path.exists(local_prev) and os.path.getsize(local_prev) > 0:
+                            import shutil
+                            shutil.copyfile(local_prev, generated_path)
+                            used_preview_file = True
 
-                # Determine sender value for template
-                sender_value = ""
-                sender_top = f"\u202A{sender}\u202C" if sender else f"\u202A{default_sender}\u202C"
-                
-                # If external OR manager is sender -> sender_value stays empty (manager signature kept)
-                # Only if internal AND NOT manager -> employee signature used
-                if is_internal and not manager_is_sender and sender:
-                    sender_value = f"\u202Bمقدمه لسيادتكم\n{sender}\u202C"
+                    if used_preview_file:
+                        from services.word_editor import update_code_in_docx
+                        last_code = session.get('last_preview_code')
+                        if last_code and last_code != full_code:
+                            update_code_in_docx(generated_path, last_code, full_code)
+                        replace_placeholder(generated_path, generated_path, full_code)
+                        print(f"[Preview Used] Using edited preview file {preview_filename} as final for {full_code}")
 
-                # Parse tables_data
-                import json
-                raw_tables = request.form.get("tables_data") or request.form.get("table_data") or "[]"
-                try:
-                    tables_data = json.loads(raw_tables)
-                    if tables_data and isinstance(tables_data, list):
-                        if len(tables_data) > 0 and isinstance(tables_data[0], list) and len(tables_data[0]) > 0 and not isinstance(tables_data[0][0], list):
-                            tables_data = [tables_data]
-                except Exception:
-                    tables_data = []
+                if not used_preview_file:
+                    from services.word_editor import replace_placeholders
+                    from services.ai_generator import normalize_recipient
+                    
+                    recipient = request.form.get("recipient", "")
+                    subject = request.form.get("subject", "")
+                    holder_name = request.form.get("holder_name", "")
+                    position = request.form.get("position", "")
+                    full_body = request.form.get("full_body", "")
+                    sender = request.form.get("sender", "")
+                    is_internal = request.form.get("is_internal") == "1"
+                    manager_is_sender = request.form.get("manager_is_sender") == "1"
 
-                # Parse and save uploaded images
-                image_paths = []
-                temp_image_files = []
-                images = request.files.getlist("images")
-                if images:
-                    import uuid
-                    for img in images:
-                        if img and img.filename:
-                            ext = img.filename.rsplit('.', 1)[-1].lower() if '.' in img.filename else 'png'
-                            temp_path = os.path.join(UPLOAD_FOLDER, f"temp_{uuid.uuid4().hex}.{ext}")
-                            img.save(temp_path)
-                            temp_image_files.append(temp_path)
-                            image_paths.append(temp_path)
-                        else:
-                            image_paths.append(None)
+                    import re
+                    def remove_office_code(text):
+                        if not text: return ""
+                        for code in ['ESSIC', 'HUEED', 'AIE']:
+                            text = re.sub(rf'\(\s*{code}\s*\)', '', text, flags=re.IGNORECASE)
+                            text = re.sub(rf'{code}', '', text, flags=re.IGNORECASE)
+                        return text.strip()
 
-                # Parse image_sizes (default 1x1 inch)
-                image_sizes = []
-                raw_sizes = request.form.get("image_sizes")
-                if raw_sizes:
+                    default_sender = curr_office.get('manager_title', '')
+                    
+                    # Unconditionally remove office text from all text fields
+                    recipient = remove_office_code(recipient)
+                    subject = remove_office_code(subject)
+                    holder_name = remove_office_code(holder_name)
+                    position = remove_office_code(position)
+                    full_body = remove_office_code(full_body)
+                    sender = remove_office_code(sender)
+                    default_sender = remove_office_code(default_sender)
+
+                    # Determine sender value for template
+                    sender_value = ""
+                    sender_top = f"\u202A{sender}\u202C" if sender else f"\u202A{default_sender}\u202C"
+                    
+                    # If external OR manager is sender -> sender_value stays empty (manager signature kept)
+                    # Only if internal AND NOT manager -> employee signature used
+                    if is_internal and not manager_is_sender and sender:
+                        sender_value = f"\u202Bمقدمه لسيادتكم\n{sender}\u202C"
+
+                    # Parse tables_data
+                    import json
+                    raw_tables = request.form.get("tables_data") or request.form.get("table_data") or "[]"
                     try:
-                        image_sizes = json.loads(raw_sizes)
+                        tables_data = json.loads(raw_tables)
+                        if tables_data and isinstance(tables_data, list):
+                            if len(tables_data) > 0 and isinstance(tables_data[0], list) and len(tables_data[0]) > 0 and not isinstance(tables_data[0][0], list):
+                                tables_data = [tables_data]
                     except Exception:
-                        image_sizes = []
-                if not image_sizes:
-                    widths = request.form.getlist("image_widths")
-                    heights = request.form.getlist("image_heights")
-                    for w, h in zip(widths, heights):
-                        try:
-                            image_sizes.append({"width": float(w or 1.0), "height": float(h or 1.0)})
-                        except Exception:
-                            image_sizes.append({"width": 1.0, "height": 1.0})
+                        tables_data = []
 
-                remove_manager = (is_internal and not manager_is_sender)
-                replace_placeholders(upload_path, generated_path, {
-                    "{{CODE_NUMBER}}": full_code,
-                    "{{SEND_TO}}": ("\u202A" + normalize_recipient(recipient) + "\u202C") if recipient else "",
-                    "{{SUBJECT}}": "\u202A" + subject + "\u202C",
-                    "{{STACK_HOLDER}}": "\u202B" + holder_name + "\u202C",
-                    "{{POSITION}}": "\u202B" + position + "\u202C",
-                    "{{BODY_TEXT}}": "\u202B" + full_body + "\u202C",
-                    "{{SENDER}}": sender_value,
-                    "{{SENDER_TOP}}": sender_top,
-                    "{{ESSIC}}": "",
-                    "{{HUEED}}": "",
-                    "{{AIE}}": "",
-                }, remove_manager_sig=remove_manager, tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes)
+                    # Parse and save uploaded images
+                    image_paths = []
+                    temp_image_files = []
+                    images = request.files.getlist("images")
+                    if images:
+                        import uuid
+                        for img in images:
+                            if img and img.filename:
+                                ext = img.filename.rsplit('.', 1)[-1].lower() if '.' in img.filename else 'png'
+                                temp_path = os.path.join(UPLOAD_FOLDER, f"temp_{uuid.uuid4().hex}.{ext}")
+                                img.save(temp_path)
+                                temp_image_files.append(temp_path)
+                                image_paths.append(temp_path)
+                            else:
+                                image_paths.append(None)
 
-                # Cleanup temp image files
-                for p in temp_image_files:
-                    if os.path.exists(p):
+                    # Parse image_sizes (default 1x1 inch)
+                    image_sizes = []
+                    raw_sizes = request.form.get("image_sizes")
+                    if raw_sizes:
                         try:
-                            os.remove(p)
+                            image_sizes = json.loads(raw_sizes)
                         except Exception:
-                            pass
+                            image_sizes = []
+                    if not image_sizes:
+                        widths = request.form.getlist("image_widths")
+                        heights = request.form.getlist("image_heights")
+                        for w, h in zip(widths, heights):
+                            try:
+                                image_sizes.append({"width": float(w or 1.0), "height": float(h or 1.0)})
+                            except Exception:
+                                image_sizes.append({"width": 1.0, "height": 1.0})
+
+                    remove_manager = (is_internal and not manager_is_sender)
+                    replace_placeholders(upload_path, generated_path, {
+                        "{{CODE_NUMBER}}": full_code,
+                        "{{SEND_TO}}": ("\u202A" + normalize_recipient(recipient) + "\u202C") if recipient else "",
+                        "{{SUBJECT}}": "\u202A" + subject + "\u202C",
+                        "{{STACK_HOLDER}}": "\u202B" + holder_name + "\u202C",
+                        "{{POSITION}}": "\u202B" + position + "\u202C",
+                        "{{BODY_TEXT}}": "\u202B" + full_body + "\u202C",
+                        "{{SENDER}}": sender_value,
+                        "{{SENDER_TOP}}": sender_top,
+                        "{{ESSIC}}": "",
+                        "{{HUEED}}": "",
+                        "{{AIE}}": "",
+                    }, remove_manager_sig=remove_manager, tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes)
+
+                    # Cleanup temp image files
+                    for p in temp_image_files:
+                        if os.path.exists(p):
+                            try:
+                                os.remove(p)
+                            except Exception:
+                                pass
                 
             # Attempt PDF generation
             from services.pdf_converter import convert_docx_to_pdf
@@ -899,7 +980,8 @@ def update_document_tracking(doc_id):
     """Update tracking and response info for an internal document."""
     doc = Document.query.get_or_404(doc_id)
     user_email = session.get('user', {}).get('email', '')
-    if not is_current_user_admin() and doc.email != user_email:
+    allowed_offices = get_user_allowed_offices()
+    if not is_current_user_admin() and doc.email != user_email and doc.office_code not in allowed_offices:
         flash("You do not have permission to edit this document's tracking info.", "danger")
         return redirect(request.referrer or url_for('tracking'))
 
@@ -1302,13 +1384,19 @@ def preview_document():
             success = upload_file_to_share(temp_docx_path, gen_name, is_preview=True)
             if success:
                 from services.onedrive import delete_file_from_share
-                old_preview = session.get('last_preview_filename')
-                if old_preview and old_preview != gen_name:
-                    delete_file_from_share(old_preview, is_preview=True)
+                form_hash = compute_dashboard_form_hash(request.form)
                 session['last_preview_filename'] = gen_name
+                session['last_preview_hash'] = form_hash
+                session['last_preview_code'] = full_code
+                session.modified = True
                 
                 url = get_word_online_url(gen_name, is_preview=True)
-                return jsonify({"success": True, "word_online_url": url})
+                return jsonify({
+                    "success": True, 
+                    "word_online_url": url,
+                    "preview_filename": gen_name,
+                    "form_hash": form_hash
+                })
             else:
                 import services.onedrive as od
                 return jsonify({"success": False, "error": f"Failed to upload preview to OneDrive. {od.LAST_ERROR}"})
@@ -1326,20 +1414,23 @@ def extract_text():
         return jsonify({"success": False, "error": "Invalid file"}), 400
         
     try:
-        from docx import Document
-        doc = Document(file)
-        raw_text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-        
-        from services.ai_generator import extract_document_fields
+        from services.word_editor import extract_document_details
+        from offices import get_current_office
+        curr_office = get_current_office()
+        default_sender = curr_office.get('manager_title', '')
         user_email = session.get('user', {}).get('email', '')
-        
-        fields = extract_document_fields(raw_text, user_email)
-        
-        if fields:
-            return jsonify({"success": True, "text": fields.get("full_body", raw_text), "fields": fields})
-        else:
-            return jsonify({"success": True, "text": raw_text, "fields": None})
+
+        fields, tables_data = extract_document_details(file, user_email=user_email, default_sender=default_sender)
+        body_content = fields.get("full_body_html") or fields.get("full_body") or ""
+
+        return jsonify({
+            "success": True,
+            "text": body_content,
+            "fields": fields,
+            "tables_data": tables_data
+        })
     except Exception as e:
+        logger.exception("Error extracting text from docx")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/upload_reserved/<int:doc_id>", methods=["POST"])
