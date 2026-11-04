@@ -260,10 +260,11 @@ def download_file_from_share(target_file_name: str, local_save_path: str, is_pre
 upload_file_to_onedrive = upload_file_to_share
 
 
-def get_word_online_url(filename: str, is_preview: bool = False) -> str:
+def get_word_online_url(filename: str, is_preview: bool = False, action: str = None) -> str:
     """
     Returns the direct Word Online (SharePoint viewer) URL for a given filename.
     The URL opens the file in the browser without redirecting through Flask.
+    For previews, defaults to action='edit' so the document can be edited directly.
     """
     _, _, _, folder_path = get_sharepoint_config(is_preview)
     base_url = "https://horusuni-my.sharepoint.com"
@@ -275,10 +276,13 @@ def get_word_online_url(filename: str, is_preview: bool = False) -> str:
         target_folder_path = f"{folder_path}/{subfolder}"
         
     encoded_filename = urllib.parse.quote(filename, safe='')
-    # Word Online direct link: /_layouts/15/Doc.aspx?sourcedoc=<server_relative_path>&action=default
     source_doc = f"{target_folder_path}/{filename}"
     encoded_source = urllib.parse.quote(source_doc, safe='/:')
+    
+    if not action:
+        action = "edit" if is_preview else "default"
+        
     return (
         f"{site_url}/_layouts/15/Doc.aspx"
-        f"?sourcedoc={encoded_source}&action=default"
+        f"?sourcedoc={encoded_source}&action={action}"
     )

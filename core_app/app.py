@@ -195,6 +195,7 @@ def inject_globals():
         SYSTEM_PREVIEW_BG=curr_office['preview_bg'],
         SYSTEM_PREVIEW_FOOTER=curr_office['preview_footer'],
         SYSTEM_PREVIEW_PT=curr_office['preview_pt'],
+        SYSTEM_PREVIEW_PB=curr_office.get('preview_pb', '8%'),
         CURRENT_OFFICE=curr_office,
         ALL_OFFICES=OFFICE_CONFIGS,
         USER_ALLOWED_OFFICES=allowed_offices_list,
@@ -1149,10 +1150,16 @@ def download(doc_id):
         abort(404)
         
     local_path = os.path.join(GENERATED_FOLDER, doc.generated_filename)
-    if not os.path.exists(local_path):
+    if os.environ.get("ONEDRIVE_SHARE_URL"):
         from services.onedrive import download_file_from_share
-        if os.environ.get("ONEDRIVE_SHARE_URL"):
-            download_file_from_share(doc.generated_filename, local_path)
+        temp_dl = local_path + ".tmp"
+        if download_file_from_share(doc.generated_filename, temp_dl):
+            if os.path.exists(temp_dl) and os.path.getsize(temp_dl) > 0:
+                import shutil
+                shutil.move(temp_dl, local_path)
+            elif os.path.exists(temp_dl):
+                try: os.remove(temp_dl)
+                except OSError: pass
             
     if not os.path.exists(local_path):
         abort(404)
@@ -1174,10 +1181,16 @@ def download_pdf(doc_id):
         return redirect(url_for("documents"))
         
     local_path = os.path.join(GENERATED_FOLDER, doc.generated_pdf_filename)
-    if not os.path.exists(local_path):
+    if os.environ.get("ONEDRIVE_SHARE_URL"):
         from services.onedrive import download_file_from_share
-        if os.environ.get("ONEDRIVE_SHARE_URL"):
-            download_file_from_share(doc.generated_pdf_filename, local_path)
+        temp_pdf = local_path + ".tmp"
+        if download_file_from_share(doc.generated_pdf_filename, temp_pdf):
+            if os.path.exists(temp_pdf) and os.path.getsize(temp_pdf) > 0:
+                import shutil
+                shutil.move(temp_pdf, local_path)
+            elif os.path.exists(temp_pdf):
+                try: os.remove(temp_pdf)
+                except OSError: pass
             
     if not os.path.exists(local_path):
         flash("File could not be found locally or on OneDrive.", "danger")
@@ -1498,11 +1511,15 @@ def upload_reserved(doc_id):
 @app.route("/edit/<int:doc_id>", methods=["GET", "POST"])
 @login_required
 def edit(doc_id):
-    """Edit a document's serial number and regenerate its full code."""
+    """Edit a document's details, content, serial number, and regenerate it."""
     doc = Document.query.get_or_404(doc_id)
     if not user_can_access_office(doc.office_code):
         flash("You do not have permission to modify this document.", "danger")
         return redirect(url_for("documents"))
+
+    doc_office = getattr(doc, 'office_code', None) or 'ESSIC'
+    from offices import get_office_by_code
+    office_cfg = get_office_by_code(doc_office)
 
     if request.method == "POST":
         try:
@@ -1512,64 +1529,74 @@ def edit(doc_id):
         except (ValueError, KeyError):
             flash("Serial number must be a positive integer.", "danger")
             return redirect(url_for("edit", doc_id=doc_id))
-            
-        full_body = doc.generated_body
-        if doc.doc_type == "direct":
-            doc.recipient = request.form.get("recipient", doc.recipient)
-            doc.subject = request.form.get("subject", doc.subject)
-            doc.holder_name = request.form.get("holder_name", doc.holder_name)
-            doc.position = request.form.get("position", doc.position)
-            doc.sender = request.form.get("sender", doc.sender)
-            doc.is_internal = request.form.get("is_internal") == "1"
-            doc.manager_is_sender = request.form.get("manager_is_sender") == "1"
-            full_body = request.form.get("full_body", doc.generated_body)
-            doc.generated_body = full_body
 
-        doc_office = getattr(doc, 'office_code', None) or 'ESSIC'
-        from offices import get_office_by_code
-        office_cfg = get_office_by_code(doc_office)
-
-        # Regenerate full code with new serial
-        new_full_code = build_full_code(new_serial, doc.month, doc.year, office_code=doc_office)
-
+        # Check serial uniqueness if changed
         if new_serial != doc.serial_number:
             existing = Document.query.filter_by(month=doc.month, year=doc.year, serial_number=new_serial, office_code=doc_office).first()
             if existing:
                 flash(f"Serial number {new_serial} is already used for this month in {doc_office}. Please choose another.", "danger")
                 return redirect(url_for("edit", doc_id=doc_id))
 
-        # Re-process the Word document with the new code
+        # Regenerate full code with new serial
+        new_full_code = build_full_code(new_serial, doc.month, doc.year, office_code=doc_office)
+
+        # Update metadata fields
+        if "file_title" in request.form:
+            new_title = request.form.get("file_title", "").strip()
+            if new_title:
+                doc.file_title = new_title
+
+        doc.recipient = request.form.get("recipient", doc.recipient or "").strip()
+        doc.subject = request.form.get("subject", doc.subject or "").strip()
+        doc.holder_name = request.form.get("holder_name", doc.holder_name or "").strip()
+        doc.position = request.form.get("position", doc.position or "").strip()
+        doc.sender = request.form.get("sender", doc.sender or "").strip()
+        doc.is_internal = request.form.get("is_internal") == "1"
+        doc.manager_is_sender = request.form.get("manager_is_sender") == "1"
+        
+        full_body = request.form.get("full_body")
+        if full_body is not None:
+            doc.generated_body = full_body
+
+        # Check if user uploaded a replacement .docx file
+        replacement_file = request.files.get("docx_file")
+        if replacement_file and replacement_file.filename and allowed_file(replacement_file.filename):
+            new_orig_name = secure_filename(replacement_file.filename)
+            new_orig_path = os.path.join(UPLOAD_FOLDER, new_orig_name)
+            replacement_file.save(new_orig_path)
+            doc.filename = new_orig_name
+
+        # Locate base uploaded file or template
         upload_path = os.path.join(UPLOAD_FOLDER, doc.filename)
-        # If it was generated via direct entry and we don't have the uploaded file, fallback to template
         fallback_template = office_cfg.get('template', SYSTEM_TEMPLATE_FILENAME)
-        if doc.doc_type == "direct" and not os.path.exists(upload_path):
-            upload_path = os.path.join(BASE_DIR, fallback_template)
-            
+        
         if not os.path.exists(upload_path):
-            flash("Original uploaded file not found. Cannot regenerate document.", "danger")
+            base_path = os.path.join(BASE_DIR, doc.filename)
+            if os.path.exists(base_path):
+                upload_path = base_path
+            else:
+                upload_path = os.path.join(BASE_DIR, fallback_template)
+
+        if not os.path.exists(upload_path):
+            flash("Original template or uploaded file not found. Cannot regenerate document.", "danger")
             return redirect(url_for("documents"))
 
-        # Remove old generated file
-        if doc.generated_filename:
-            old_path = os.path.join(GENERATED_FOLDER, doc.generated_filename)
-            if os.path.exists(old_path):
-                os.remove(old_path)
-                
-        if doc.generated_pdf_filename:
-            old_pdf_path = os.path.join(GENERATED_FOLDER, doc.generated_pdf_filename)
-            if os.path.exists(old_pdf_path):
-                os.remove(old_pdf_path)
+        old_generated_filename = doc.generated_filename
+        old_generated_pdf_filename = doc.generated_pdf_filename
 
         stem = doc.filename.rsplit(".", 1)[0]
         new_generated_name = f"{stem}__{new_full_code.replace(' ', '_')}.docx"
         new_generated_path = os.path.join(GENERATED_FOLDER, new_generated_name)
 
         try:
-            if doc.doc_type == "direct":
+            # Check if this document uses template replacement (direct, letter, request, or has body)
+            is_template_based = doc.doc_type in ["direct", "letter", "request"] or bool(doc.generated_body)
+            
+            if is_template_based:
                 from services.word_editor import replace_placeholders
                 from services.ai_generator import normalize_recipient
-                
                 import re
+
                 def remove_office_code(text):
                     if not text: return ""
                     for code in ['ESSIC', 'HUEED', 'AIE']:
@@ -1578,30 +1605,33 @@ def edit(doc_id):
                     return text.strip()
 
                 default_sender = office_cfg.get('manager_title', '')
-                
-                # Unconditionally remove office text from all text fields
                 doc.recipient = remove_office_code(doc.recipient)
                 doc.subject = remove_office_code(doc.subject)
                 doc.holder_name = remove_office_code(doc.holder_name)
                 doc.position = remove_office_code(doc.position)
-                full_body = remove_office_code(full_body)
                 doc.sender = remove_office_code(doc.sender)
+                body_to_use = remove_office_code(doc.generated_body or "")
                 default_sender = remove_office_code(default_sender)
 
-                body_to_use = full_body
                 sender_value = ""
                 sender_top = f"\u202A{doc.sender}\u202C" if doc.sender else f"\u202A{default_sender}\u202C"
-                
                 if doc.is_internal and not doc.manager_is_sender and doc.sender:
                     sender_value = f"\u202Bمقدمه لسيادتكم\n{doc.sender}\u202C"
 
-                replace_placeholders(upload_path, new_generated_path, {
+                if doc.doc_type in ["direct", "letter", "request"]:
+                    tmpl_path = os.path.join(BASE_DIR, fallback_template)
+                    if not os.path.exists(tmpl_path):
+                        tmpl_path = upload_path
+                else:
+                    tmpl_path = upload_path
+
+                replace_placeholders(tmpl_path, new_generated_path, {
                     "{{CODE_NUMBER}}": new_full_code,
                     "{{SEND_TO}}": ("\u202A" + normalize_recipient(doc.recipient) + "\u202C") if doc.recipient else "",
                     "{{SUBJECT}}": "\u202A" + doc.subject + "\u202C",
                     "{{STACK_HOLDER}}": "\u202B" + (doc.holder_name or "") + "\u202C",
                     "{{POSITION}}": "\u202B" + (doc.position or "") + "\u202C",
-                    "{{BODY_TEXT}}": "\u202B" + (body_to_use or "") + "\u202C",
+                    "{{BODY_TEXT}}": body_to_use or "",
                     "{{SENDER}}": sender_value,
                     "{{SENDER_TOP}}": sender_top,
                     "{{ESSIC}}": "",
@@ -1609,28 +1639,97 @@ def edit(doc_id):
                     "{{AIE}}": "",
                 }, remove_manager_sig=(doc.is_internal and not doc.manager_is_sender))
             else:
-                from services.word_editor import replace_placeholder
+                from services.word_editor import replace_placeholder, update_code_in_docx
                 replace_placeholder(upload_path, new_generated_path, new_full_code)
-                
+                if doc.full_code and doc.full_code != new_full_code:
+                    update_code_in_docx(new_generated_path, doc.full_code, new_full_code)
+
+            # Sync changes back to the original file in UPLOAD_FOLDER so it reflects the edits
+            if os.path.exists(upload_path) and upload_path.startswith(UPLOAD_FOLDER):
+                import shutil
+                shutil.copyfile(new_generated_path, upload_path)
+
+            # Convert to PDF
             from services.pdf_converter import convert_docx_to_pdf
             new_generated_pdf_name = new_generated_name.replace(".docx", ".pdf")
             new_generated_pdf_path = os.path.join(GENERATED_FOLDER, new_generated_pdf_name)
             pdf_success = convert_docx_to_pdf(new_generated_path, new_generated_pdf_path)
-            if pdf_success:
-                doc.generated_pdf_filename = new_generated_pdf_name
-            else:
-                doc.generated_pdf_filename = None
+            new_pdf_file = new_generated_pdf_name if pdf_success else None
+
         except Exception as e:
+            logger.exception("Error regenerating document in edit")
             flash(f"Error regenerating document: {e}", "danger")
             return redirect(url_for("documents"))
+
+        # Clean up old local generated files if name changed
+        if old_generated_filename and old_generated_filename != new_generated_name:
+            old_path = os.path.join(GENERATED_FOLDER, old_generated_filename)
+            if os.path.exists(old_path):
+                try: os.remove(old_path)
+                except OSError: pass
+
+        if old_generated_pdf_filename and old_generated_pdf_filename != new_pdf_file:
+            old_pdf_path = os.path.join(GENERATED_FOLDER, old_generated_pdf_filename)
+            if os.path.exists(old_pdf_path):
+                try: os.remove(old_pdf_path)
+                except OSError: pass
 
         doc.serial_number = new_serial
         doc.full_code = new_full_code
         doc.generated_filename = new_generated_name
+        doc.generated_pdf_filename = new_pdf_file
+
+        from services.onedrive import get_word_online_url, upload_file_to_share, delete_file_from_share
+        try:
+            doc.sharepoint_url = get_word_online_url(new_generated_name)
+        except Exception:
+            pass
+
         db.session.commit()
 
-        flash(f"Document updated to <strong>{new_full_code}</strong>.", "success")
+        # Sync to OneDrive
+        if os.environ.get("ONEDRIVE_SHARE_URL"):
+            if old_generated_filename and old_generated_filename != new_generated_name:
+                try: delete_file_from_share(old_generated_filename)
+                except Exception: pass
+            if old_generated_pdf_filename and old_generated_pdf_filename != new_pdf_file:
+                try: delete_file_from_share(old_generated_pdf_filename)
+                except Exception: pass
+
+            up_ok = upload_file_to_share(new_generated_path, new_generated_name)
+            if not up_ok:
+                from services.onedrive import LAST_ERROR
+                if LAST_ERROR:
+                    flash(f"تنبيه المزامنة مع OneDrive: {LAST_ERROR}", "warning")
+            if new_pdf_file and os.path.exists(new_generated_pdf_path):
+                upload_file_to_share(new_generated_pdf_path, new_pdf_file)
+
+        flash(f"تم تحديث المستند بنجاح: <strong>{new_full_code}</strong>", "success")
         return redirect(url_for("documents"))
+
+    # GET request: prefill details if empty and uploaded docx exists
+    if not doc.generated_body:
+        upload_path = os.path.join(UPLOAD_FOLDER, doc.filename)
+        if os.path.exists(upload_path):
+            try:
+                from services.word_editor import extract_document_details
+                fields, _ = extract_document_details(upload_path, default_sender=office_cfg.get('manager_title', ''))
+                if fields:
+                    if not doc.recipient and fields.get("recipient"):
+                        doc.recipient = fields.get("recipient")
+                    if not doc.subject and fields.get("subject"):
+                        doc.subject = fields.get("subject")
+                    if not doc.holder_name and fields.get("holder_name"):
+                        doc.holder_name = fields.get("holder_name")
+                    if not doc.position and fields.get("position"):
+                        doc.position = fields.get("position")
+                    if not doc.sender and fields.get("sender"):
+                        doc.sender = fields.get("sender")
+                    extracted_body = fields.get("full_body_html") or fields.get("full_body")
+                    if extracted_body:
+                        doc.generated_body = extracted_body
+            except Exception as e:
+                logger.warning(f"Could not extract details for edit: {e}")
 
     return render_template("edit.html", doc=doc)
 

@@ -18,10 +18,86 @@ from docx import Document
 from docx.oxml.ns import qn
 from docx.shared import Pt
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.oxml import OxmlElement
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import nsdecls
 from docx.text.paragraph import Paragraph
 
 PLACEHOLDER = "{{CODE_NUMBER}}"
+
+
+def apply_p_dir_and_align(paragraph, direction='rtl', alignment='right'):
+    """
+    Sets paragraph direction and alignment in strict compliance with OpenXML schema.
+    In OpenXML with w:bidi w:val="1":
+      w:jc w:val="left"  = leading edge (physical Right for RTL)
+      w:jc w:val="right" = trailing edge (physical Left for RTL)
+      w:jc w:val="both"  = justified (spans full margins)
+      w:jc w:val="center"= centered
+    Schema sequence in w:pPr:
+      w:pStyle -> ... -> w:bidi -> w:spacing -> w:ind -> w:jc -> ... -> w:rPr -> w:sectPr
+    """
+    align_norm = (alignment or '').strip().lower()
+    dir_norm = (direction or '').strip().lower()
+    if dir_norm not in ('rtl', 'ltr'):
+        dir_norm = 'rtl'
+        
+    pPr = paragraph._element.get_or_add_pPr()
+    
+    # 1. Remove any existing w:bidi and w:jc elements to prevent conflicts
+    for child in list(pPr):
+        if child.tag.endswith(('bidi', 'jc')):
+            pPr.remove(child)
+            
+    # 2. Insert w:bidi in schema-valid order (strictly before spacing, ind, jc, rPr, sectPr)
+    bidi_val = '1' if dir_norm == 'rtl' else '0'
+    bidi = parse_xml(f'<w:bidi {nsdecls("w")} w:val="{bidi_val}"/>')
+    
+    if dir_norm == 'rtl':
+        if align_norm in ('both', 'justify'):
+            jc_val = 'both'
+        elif align_norm == 'center':
+            jc_val = 'center'
+        elif align_norm == 'left':
+            jc_val = 'right'  # In Word RTL bidi, right is physical left
+        else: # 'right' or default for RTL
+            jc_val = 'left'   # In Word RTL bidi, left is physical right (leading margin)
+    else:
+        if align_norm in ('both', 'justify'):
+            jc_val = 'both'
+        elif align_norm == 'center':
+            jc_val = 'center'
+        elif align_norm == 'right':
+            jc_val = 'right'
+        else:
+            jc_val = 'left'
+            
+    jc = parse_xml(f'<w:jc {nsdecls("w")} w:val="{jc_val}"/>')
+    
+    pPr.insert_element_before(bidi, 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
+    pPr.insert_element_before(jc, 'w:rPr', 'w:sectPr')
+
+
+def apply_run_rtl_and_lang(run, is_rtl=True):
+    """Ensures run has proper w:rtl, w:lang, and w:rFonts properties for Arabic/English."""
+    rPr = run._element.get_or_add_rPr()
+    for child in list(rPr):
+        if child.tag.endswith(('rtl', 'lang')):
+            rPr.remove(child)
+    if is_rtl:
+        rtl = parse_xml(f'<w:rtl {nsdecls("w")} w:val="1"/>')
+        rPr.append(rtl)
+        lang = parse_xml(f'<w:lang {nsdecls("w")} w:val="ar-SA" w:bidi="ar-SA"/>')
+        rPr.append(lang)
+        rFonts = rPr.find(qn('w:rFonts'))
+        if rFonts is not None:
+            font_name = rFonts.get(qn('w:ascii')) or rFonts.get(qn('w:hAnsi')) or "Arial Unicode MS"
+            if not rFonts.get(qn('w:cs')):
+                rFonts.set(qn('w:cs'), font_name)
+    else:
+        rtl = parse_xml(f'<w:rtl {nsdecls("w")} w:val="0"/>')
+        rPr.append(rtl)
+        lang = parse_xml(f'<w:lang {nsdecls("w")} w:val="en-US"/>')
+        rPr.append(lang)
 
 
 def _replace_in_paragraph(paragraph, replacement: str):
@@ -83,6 +159,21 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str):
     """
     doc = Document(input_path)
 
+    # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
+    # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
+    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower()
+    if not is_vice_dean_doc:
+        for t in doc.tables:
+            for row in t.rows:
+                for cell in row.cells:
+                    if "وكيل كلية الهندسة" in cell.text:
+                        is_vice_dean_doc = True
+                        break
+    if is_vice_dean_doc:
+        for s in doc.sections:
+            if s.bottom_margin.pt < 155:
+                s.bottom_margin = Pt(160)
+
     # 1. Body paragraphs
     for paragraph in doc.paragraphs:
         _replace_in_paragraph(paragraph, replacement)
@@ -113,6 +204,21 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str):
     """
     import re
     doc = Document(input_path)
+
+    # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
+    # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
+    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower()
+    if not is_vice_dean_doc:
+        for t in doc.tables:
+            for row in t.rows:
+                for cell in row.cells:
+                    if "وكيل كلية الهندسة" in cell.text:
+                        is_vice_dean_doc = True
+                        break
+    if is_vice_dean_doc:
+        for s in doc.sections:
+            if s.bottom_margin.pt < 155:
+                s.bottom_margin = Pt(160)
 
     def _clean_text(text: str):
         if not text:
@@ -215,6 +321,21 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
 
     doc = Document(input_path)
 
+    # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
+    # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
+    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower()
+    if not is_vice_dean_doc:
+        for t in doc.tables:
+            for row in t.rows:
+                for cell in row.cells:
+                    if "وكيل كلية الهندسة" in cell.text:
+                        is_vice_dean_doc = True
+                        break
+    if is_vice_dean_doc:
+        for s in doc.sections:
+            if s.bottom_margin.pt < 155:
+                s.bottom_margin = Pt(160)
+
     def _replace_in_p(paragraph):
         full_text = "".join(run.text for run in paragraph.runs)
         modified = False
@@ -225,34 +346,20 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
             if k in full_text:
                 if k == "{{BODY_TEXT}}":
                     modified_body = True
-                    # Clean up Body Text
-                    raw_v = v
-                    prefix = ""
-                    suffix = ""
-                    if raw_v.startswith("\u202B") or raw_v.startswith("\u202A"):
-                        prefix = raw_v[0]
-                        raw_v = raw_v[1:]
-                    if raw_v.endswith("\u202C"):
-                        suffix = raw_v[-1]
-                        raw_v = raw_v[:-1]
+                    # Clean up Body Text and remove any wrapping directional marks
+                    raw_v = (v or "").replace("\u202b", "").replace("\u202a", "").replace("\u202c", "").strip()
                         
                     # Enforce limits (allow more room if tables or images or rich html are included)
-                    import re
                     has_media = bool(re.search(r'\{\{(?:TABLE|IMAGE)_\d+\}\}', raw_v))
                     MAX_WORDS = 800 if has_media else 400
                     MAX_CHARS = 8000 if has_media else 4000
-                    raw_v = raw_v.strip()
                     words = raw_v.split()
-                    if len(words) > MAX_WORDS:
+                    if len(words) > MAX_WORDS and not ('<' in raw_v and '>' in raw_v):
                         raw_v = " ".join(words[:MAX_WORDS])
-                    if len(raw_v) > MAX_CHARS:
+                    if len(raw_v) > MAX_CHARS and not ('<' in raw_v and '>' in raw_v):
                         raw_v = raw_v[:MAX_CHARS].rsplit(" ", 1)[0]
                         
-                    # Filter out empty lines
-                    lines = [line.strip() for line in raw_v.split("\n") if line.strip()]
-                    raw_v = "\n".join(lines)
-                    
-                    v = prefix + raw_v + suffix
+                    v = raw_v
 
                 full_text = full_text.replace(k, v)
                 modified = True
@@ -263,7 +370,6 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
             elif paragraph.runs:
                 if modified_body:
                     from html.parser import HTMLParser
-                    import re
 
                     def parse_color_to_rgb(val):
                         if not val:
@@ -337,6 +443,8 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             self.current_runs = []
                             self.current_align = 'right'
                             self.current_dir = 'rtl'
+                            self.align_stack = ['right']
+                            self.dir_stack = ['rtl']
                             self.current_heading = 0
                             self.list_stack = []
                             self.ol_counter_stack = []
@@ -344,16 +452,27 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             self.base_format = {'bold': False, 'italic': False, 'underline': False, 'color': None, 'highlight': None}
                             self.format_stack = [self.base_format.copy()]
                             self.tag_stack = []
+                            self.in_li = False
+                            self.pending_li_prefix = None
+                            self.pending_li_fmt = None
 
                         def _flush_paragraph(self):
-                            if self.current_runs:
-                                self.paragraphs.append({
-                                    'runs': self.current_runs,
-                                    'alignment': self.current_align,
-                                    'direction': self.current_dir,
-                                    'heading_level': self.current_heading
-                                })
-                                self.current_runs = []
+                            runs_to_flush = [r for r in self.current_runs if r.get('text')]
+                            if runs_to_flush:
+                                p_text = "".join(r.get('text', '') for r in runs_to_flush)
+                                if p_text.strip():
+                                    has_arabic = bool(re.search(r'[\u0600-\u06FF]', p_text))
+                                    final_dir = 'rtl' if has_arabic else self.current_dir
+                                    final_align = self.current_align
+                                    if has_arabic and final_align not in ('center', 'both', 'justify', 'left'):
+                                        final_align = 'right'
+                                    self.paragraphs.append({
+                                        'runs': runs_to_flush,
+                                        'alignment': final_align,
+                                        'direction': final_dir,
+                                        'heading_level': self.current_heading
+                                    })
+                            self.current_runs = []
 
                         def handle_starttag(self, tag, attrs):
                             attrs_dict = dict(attrs)
@@ -367,7 +486,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             elif 'text-align: left' in style or align_attr == 'left':
                                 new_align = 'left'
                             elif 'text-align: justify' in style or align_attr == 'justify':
-                                new_align = 'justify'
+                                new_align = 'both'
                             elif 'text-align: right' in style or align_attr == 'right':
                                 new_align = 'right'
 
@@ -377,17 +496,25 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             elif 'direction: rtl' in style or dir_attr == 'rtl':
                                 new_dir = 'rtl'
 
-                            if tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div']:
-                                self._flush_paragraph()
-                                if new_dir:
-                                    self.current_dir = new_dir
-                                else:
-                                    self.current_dir = 'rtl'
-
+                            if tag == 'br':
+                                if not self.in_li:
+                                    self._flush_paragraph()
+                            elif tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div']:
+                                if not self.in_li:
+                                    self._flush_paragraph()
+                                parent_dir = self.dir_stack[-1] if self.dir_stack else 'rtl'
+                                parent_align = self.align_stack[-1] if self.align_stack else 'right'
+                                
+                                self.current_dir = new_dir if new_dir else parent_dir
                                 if new_align:
                                     self.current_align = new_align
                                 elif not self.list_stack:
                                     self.current_align = 'left' if self.current_dir == 'ltr' else 'right'
+                                else:
+                                    self.current_align = parent_align
+
+                                self.dir_stack.append(self.current_dir)
+                                self.align_stack.append(self.current_align)
 
                                 if tag == 'h1':
                                     self.current_heading = 1
@@ -405,30 +532,20 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                 self.ol_counter_stack.append(1)
                             elif tag == 'li':
                                 self._flush_paragraph()
-                                if new_dir:
-                                    self.current_dir = new_dir
-                                if new_align:
-                                    self.current_align = new_align
-                                else:
-                                    self.current_align = 'left' if self.current_dir == 'ltr' else 'right'
+                                self.in_li = True
+                                parent_dir = self.dir_stack[-1] if self.dir_stack else 'rtl'
+                                parent_align = self.align_stack[-1] if self.align_stack else 'right'
+                                self.current_dir = new_dir if new_dir else parent_dir
+                                self.current_align = new_align if new_align else ('left' if self.current_dir == 'ltr' else 'right')
                                 self.current_heading = 0
 
                                 if self.list_stack and self.list_stack[-1] == 'ol':
                                     count = self.ol_counter_stack[-1]
-                                    prefix = f'{count}. '
+                                    self.pending_li_prefix = f'{count}. '
                                     self.ol_counter_stack[-1] += 1
                                 else:
-                                    prefix = '• '
-
-                                active_fmt = self.format_stack[-1]
-                                self.current_runs.append({
-                                    'text': prefix,
-                                    'bold': True,
-                                    'italic': False,
-                                    'underline': False,
-                                    'color': active_fmt.get('color'),
-                                    'highlight': None
-                                })
+                                    self.pending_li_prefix = '• '
+                                self.pending_li_fmt = self.format_stack[-1].copy()
 
                             overrides = {}
                             if tag in ['strong', 'b'] or 'font-weight: bold' in style or 'font-weight: 700' in style:
@@ -477,8 +594,20 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                         self.format_stack.pop(i + 1)
                                         break
 
-                            if tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'li']:
+                            if tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div']:
+                                if not self.in_li:
+                                    self._flush_paragraph()
+                                self.current_heading = 0
+                                if len(self.dir_stack) > 1:
+                                    self.dir_stack.pop()
+                                    self.current_dir = self.dir_stack[-1]
+                                if len(self.align_stack) > 1:
+                                    self.align_stack.pop()
+                                    self.current_align = self.align_stack[-1]
+                            elif tag == 'li':
                                 self._flush_paragraph()
+                                self.in_li = False
+                                self.pending_li_prefix = None
                                 self.current_heading = 0
                             elif tag in ['ul', 'ol']:
                                 self._flush_paragraph()
@@ -487,27 +616,56 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                 if self.ol_counter_stack:
                                     self.ol_counter_stack.pop()
                             elif tag == 'br':
-                                self._flush_paragraph()
+                                if not self.in_li:
+                                    self._flush_paragraph()
 
                         def handle_data(self, data):
                             text = data.replace('\r', '')
-                            if not text.strip() and len(self.current_runs) == 0:
+                            if not text:
                                 return
                             fmt = self.format_stack[-1]
-                            self.current_runs.append({
-                                'text': text,
-                                'bold': fmt['bold'],
-                                'italic': fmt['italic'],
-                                'underline': fmt['underline'],
-                                'color': fmt['color'],
-                                'highlight': fmt['highlight']
-                            })
 
-                    if '<p' not in full_text and '<br' not in full_text and '<div' not in full_text and '<h1' not in full_text and '<ul' not in full_text and '<ol' not in full_text:
-                        full_text = full_text.replace('\n', '<br>')
+                            if not self.in_li and '\n' in text:
+                                lines = text.split('\n')
+                                for idx, line in enumerate(lines):
+                                    if idx > 0:
+                                        self._flush_paragraph()
+                                    if line:
+                                        self.current_runs.append({
+                                            'text': line,
+                                            'bold': fmt['bold'],
+                                            'italic': fmt['italic'],
+                                            'underline': fmt['underline'],
+                                            'color': fmt['color'],
+                                            'highlight': fmt['highlight']
+                                        })
+                            else:
+                                if self.in_li and self.pending_li_prefix and text.strip():
+                                    prefix = self.pending_li_prefix
+                                    self.pending_li_prefix = None
+                                    pfmt = self.pending_li_fmt or fmt
+                                    self.current_runs.append({
+                                        'text': prefix,
+                                        'bold': True,
+                                        'italic': False,
+                                        'underline': False,
+                                        'color': pfmt.get('color'),
+                                        'highlight': None
+                                    })
+                                if text.strip() or len(self.current_runs) > 0:
+                                    self.current_runs.append({
+                                        'text': text,
+                                        'bold': fmt['bold'],
+                                        'italic': fmt['italic'],
+                                        'underline': fmt['underline'],
+                                        'color': fmt['color'],
+                                        'highlight': fmt['highlight']
+                                    })
+
+                    clean_full_text = full_text.replace('\u202b', '').replace('\u202a', '').replace('\u202c', '').strip()
                         
                     parser = DocxHTMLParser()
-                    parser.feed(full_text)
+                    parser.feed(clean_full_text)
                     parser._flush_paragraph()
                     
                     parsed_paragraphs = parser.paragraphs
@@ -532,7 +690,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                         # Clean up inherited pPr properties that might conflict with desired alignment/direction
                         pPr = current_p._element.get_or_add_pPr()
                         for child in list(pPr):
-                            if child.tag.endswith(('pStyle', 'jc', 'bidi')):
+                            if child.tag.endswith(('pStyle', 'jc', 'bidi', 'rPr', 'ind')):
                                 pPr.remove(child)
 
                         p_dir = p_data.get('direction', 'rtl')
@@ -555,23 +713,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             fmt.space_after = Pt(2)
 
                         # Set paragraph properties in strict OpenXML schema order:
-                        # 1. w:bidi (must be before w:jc and w:rPr)
-                        # 2. w:jc
-                        # 3. w:rPr
-                        p_rPr = pPr.find(qn('w:rPr'))
-                        if p_rPr is not None:
-                            pPr.remove(p_rPr)
-
-                        bidi = OxmlElement('w:bidi')
-                        bidi.set(qn('w:val'), '1' if p_dir == 'rtl' else '0')
-                        pPr.append(bidi)
-
-                        jc = OxmlElement('w:jc')
-                        jc.set(qn('w:val'), p_align)
-                        pPr.append(jc)
-
-                        if p_rPr is not None:
-                            pPr.append(p_rPr)
+                        apply_p_dir_and_align(current_p, p_dir, p_align)
                         
                         for run_info in p_data.get('runs', []):
                             text_part = run_info['text']
@@ -732,14 +874,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                                     else:
                                                         current_p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
-                                                    fmt = current_p.paragraph_format
-                                                    fmt.space_before = Pt(0)
-                                                    fmt.space_after = Pt(0)
-                                                    fmt.line_spacing = 1.0
-                                                    pPr = current_p._element.get_or_add_pPr()
-                                                    bidi = OxmlElement('w:bidi')
-                                                    bidi.set(qn('w:val'), '1' if p_dir == 'rtl' else '0')
-                                                    pPr.append(bidi)
+                                                    apply_p_dir_and_align(current_p, p_dir, p_align)
                                         except Exception as e:
                                             print("Image error:", e)
                                     continue
@@ -754,20 +889,8 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                             cloned_rPr.remove(child)
                                     run._element.insert(0, cloned_rPr)
                                     
-                                rPr = run._element.get_or_add_rPr()
-                                for child in list(rPr):
-                                    if child.tag.endswith(('rtl', 'lang')):
-                                        rPr.remove(child)
-                                rtl = OxmlElement('w:rtl')
-                                rtl.set(qn('w:val'), '1' if p_dir == 'rtl' else '0')
-                                rPr.append(rtl)
-                                lang = OxmlElement('w:lang')
-                                if p_dir == 'rtl':
-                                    lang.set(qn('w:bidi'), 'ar-SA')
-                                    lang.set(qn('w:val'), 'ar-SA')
-                                else:
-                                    lang.set(qn('w:val'), 'en-US')
-                                rPr.append(lang)
+                                has_ar = bool(re.search(r'[\u0600-\u06FF]', part))
+                                apply_run_rtl_and_lang(run, is_rtl=(p_dir == 'rtl' or has_ar))
                                 
                                 if heading_level == 1:
                                     run.bold = True
@@ -807,6 +930,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                         run.font.color.rgb = RGBColor(r, g, b)
 
                                 if run_info.get('highlight'):
+                                    rPr = run._element.get_or_add_rPr()
                                     existing_hl = rPr.find(qn('w:highlight'))
                                     if existing_hl is not None:
                                         existing_hl.set(qn('w:val'), run_info['highlight'])
@@ -819,12 +943,18 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                     
                 else:
                     # Normal replacement without paragraph splitting
-                    saved_alignment = paragraph.alignment
                     paragraph.runs[0].text = full_text
                     for run in paragraph.runs[1:]:
                         run.text = ""
-                    if saved_alignment is not None:
-                        paragraph.alignment = saved_alignment
+
+                    has_ar = bool(re.search(r'[\u0600-\u06FF]', full_text))
+                    if has_ar:
+                        target_align = 'center' if paragraph.alignment == WD_PARAGRAPH_ALIGNMENT.CENTER else 'right'
+                        apply_p_dir_and_align(paragraph, 'rtl', target_align)
+                        for r in paragraph.runs:
+                            apply_run_rtl_and_lang(r, is_rtl=True)
+                    elif paragraph.alignment is not None:
+                        apply_p_dir_and_align(paragraph, 'ltr', 'center' if paragraph.alignment == WD_PARAGRAPH_ALIGNMENT.CENTER else 'left')
 
     def _replace_in_t(table):
         for row in table.rows:
@@ -882,6 +1012,28 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         _replace_in_p(paragraph)
     for table in doc.tables:
         _replace_in_t(table)
+
+    # Format and align all table cells that contain Arabic text (including static labels)
+    for table in doc.tables:
+        has_table_ar = False
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    p_text = "".join(r.text for r in p.runs)
+                    if re.search(r'[\u0600-\u06FF]', p_text):
+                        has_table_ar = True
+                        if p.alignment == WD_PARAGRAPH_ALIGNMENT.CENTER:
+                            apply_p_dir_and_align(p, 'rtl', 'center')
+                        else:
+                            apply_p_dir_and_align(p, 'rtl', 'right')
+                        for r in p.runs:
+                            apply_run_rtl_and_lang(r, is_rtl=True)
+        if has_table_ar:
+            tblPr = table._element.xpath('w:tblPr')
+            if tblPr and not table._element.xpath('w:tblPr/w:bidiVisual'):
+                bidiVisual = OxmlElement('w:bidiVisual')
+                tblPr[0].append(bidiVisual)
+
     for section in doc.sections:
         _replace_in_hf(section.header)
         _replace_in_hf(section.footer)

@@ -101,7 +101,7 @@
         width: 100%;
         aspect-ratio: 1 / 1.414;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        padding: {{ SYSTEM_PREVIEW_PT }} 8% 8%;
+        padding: {{ SYSTEM_PREVIEW_PT }} 8% {{ SYSTEM_PREVIEW_PB|default('8%') }};
         position: relative;
         font-size: 11px;
         line-height: 1.6;
@@ -430,10 +430,10 @@
 
                                     <!-- Alignment: Right, Center, Left, Justify -->
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('justifyRight')" onmousedown="saveCurrentSelection()" title="محاذاة لليمين (Align Right)"><i class="bi bi-text-right"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('justifyCenter')" onmousedown="saveCurrentSelection()" title="توسيط (Center)"><i class="bi bi-text-center"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('justifyLeft')" onmousedown="saveCurrentSelection()" title="محاذاة لليسار (Align Left)"><i class="bi bi-text-left"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('justifyFull')" onmousedown="saveCurrentSelection()" title="ضبط كشيدة (Justify)"><i class="bi bi-justify"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary ribbon-btn active" id="alignRightBtn" onclick="applyAlignment('right')" onmousedown="saveCurrentSelection()" title="محاذاة لليمين (Align Right)"><i class="bi bi-text-right"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary ribbon-btn" id="alignCenterBtn" onclick="applyAlignment('center')" onmousedown="saveCurrentSelection()" title="توسيط (Center)"><i class="bi bi-text-center"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary ribbon-btn" id="alignLeftBtn" onclick="applyAlignment('left')" onmousedown="saveCurrentSelection()" title="محاذاة لليسار (Align Left)"><i class="bi bi-text-left"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary ribbon-btn" id="alignJustifyBtn" onclick="applyAlignment('justify')" onmousedown="saveCurrentSelection()" title="ضبط كشيدة (Justify)"><i class="bi bi-justify"></i></button>
                                     </div>
 
                                     <div class="vr mx-1" style="height: 20px;"></div>
@@ -1585,11 +1585,32 @@
         editor.focus();
         restoreSavedSelection();
 
-        // Check if selection is within a specific block element
+        const isRtl = (dir === 'rtl');
+        const defaultAlign = isRtl ? 'right' : 'left';
+        editor.setAttribute('dir', dir);
+        editor.style.direction = dir;
+
         const sel = window.getSelection();
-        let targetBlock = null;
-        if (sel && sel.rangeCount > 0) {
-            let node = sel.getRangeAt(0).commonAncestorContainer;
+        let affected = false;
+
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+            const range = sel.getRangeAt(0);
+            const blocks = editor.querySelectorAll('p, div, h1, h2, h3, h4, ul, ol, li');
+            blocks.forEach(b => {
+                if (range.intersectsNode(b)) {
+                    b.setAttribute('dir', dir);
+                    b.style.direction = dir;
+                    if (!b.style.textAlign || (isRtl && b.style.textAlign === 'left') || (!isRtl && b.style.textAlign === 'right')) {
+                        b.style.textAlign = defaultAlign;
+                    }
+                    affected = true;
+                }
+            });
+        }
+
+        if (!affected) {
+            let node = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).commonAncestorContainer : null;
+            let targetBlock = null;
             while (node && node !== editor) {
                 if (node.nodeType === 1 && ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'UL', 'OL', 'LI'].includes(node.tagName)) {
                     targetBlock = node;
@@ -1597,32 +1618,33 @@
                 }
                 node = node.parentNode;
             }
-        }
 
-        if (targetBlock) {
-            targetBlock.setAttribute('dir', dir);
-            targetBlock.style.direction = dir;
-            targetBlock.style.textAlign = dir === 'rtl' ? 'right' : 'left';
-        } else {
-            // Apply to all top-level child elements or wrap
-            const children = editor.children;
-            if (children.length > 0) {
-                for (let i = 0; i < children.length; i++) {
-                    children[i].setAttribute('dir', dir);
-                    children[i].style.direction = dir;
-                    children[i].style.textAlign = dir === 'rtl' ? 'right' : 'left';
+            if (targetBlock) {
+                targetBlock.setAttribute('dir', dir);
+                targetBlock.style.direction = dir;
+                targetBlock.style.textAlign = defaultAlign;
+            } else {
+                const blocks = editor.querySelectorAll('p, div, h1, h2, h3, h4, ul, ol, li');
+                if (blocks.length > 0) {
+                    blocks.forEach(b => {
+                        b.setAttribute('dir', dir);
+                        b.style.direction = dir;
+                        if (!b.style.textAlign || (isRtl && b.style.textAlign === 'left') || (!isRtl && b.style.textAlign === 'right')) {
+                            b.style.textAlign = defaultAlign;
+                        }
+                    });
+                } else if (editor.innerHTML.trim()) {
+                    editor.innerHTML = `<p dir="${dir}" style="text-align: ${defaultAlign};">${editor.innerHTML.trim()}</p>`;
                 }
+                editor.style.textAlign = defaultAlign;
             }
-            editor.setAttribute('dir', dir);
-            editor.style.direction = dir;
-            editor.style.textAlign = dir === 'rtl' ? 'right' : 'left';
         }
 
         // Update button states
         const rtlBtn = document.getElementById('dirRtlBtn');
         const ltrBtn = document.getElementById('dirLtrBtn');
         if (rtlBtn && ltrBtn) {
-            if (dir === 'rtl') {
+            if (isRtl) {
                 rtlBtn.classList.add('active');
                 ltrBtn.classList.remove('active');
             } else {
@@ -1631,9 +1653,70 @@
             }
         }
 
+        updateAlignButtons(defaultAlign);
+
         saveCurrentSelection();
         syncEditorToHidden();
         syncLivePreview();
+    }
+
+    function applyAlignment(align) {
+        const editor = document.getElementById('richBodyEditor');
+        if (!editor) return;
+        editor.focus();
+        restoreSavedSelection();
+
+        const cmdMap = {
+            'right': 'justifyRight',
+            'center': 'justifyCenter',
+            'left': 'justifyLeft',
+            'justify': 'justifyFull'
+        };
+        try {
+            document.execCommand('styleWithCSS', false, true);
+        } catch(e) {}
+        if (cmdMap[align]) {
+            document.execCommand(cmdMap[align], false, null);
+        }
+
+        const sel = window.getSelection();
+        let node = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).commonAncestorContainer : null;
+        let targetBlock = null;
+        while (node && node !== editor) {
+            if (node.nodeType === 1 && ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'UL', 'OL', 'LI'].includes(node.tagName)) {
+                targetBlock = node;
+                break;
+            }
+            node = node.parentNode;
+        }
+        if (targetBlock) {
+            targetBlock.style.textAlign = align;
+        } else {
+            editor.style.textAlign = align;
+            const blocks = editor.querySelectorAll('p, div, h1, h2, h3, h4, ul, ol, li');
+            blocks.forEach(b => { b.style.textAlign = align; });
+        }
+
+        updateAlignButtons(align);
+        saveCurrentSelection();
+        syncEditorToHidden();
+        syncLivePreview();
+    }
+
+    function updateAlignButtons(align) {
+        const btnMap = {
+            'right': 'alignRightBtn',
+            'center': 'alignCenterBtn',
+            'left': 'alignLeftBtn',
+            'justify': 'alignJustifyBtn'
+        };
+        Object.keys(btnMap).forEach(k => {
+            const b = document.getElementById(btnMap[k]);
+            if (b) {
+                if (k === align) b.classList.add('active');
+                else b.classList.remove('active');
+            }
+        });
     }
 
     function applyRibbonHeading(val) {
@@ -1655,7 +1738,13 @@
         const editor = document.getElementById('richBodyEditor');
         const hidden = document.getElementById('full_body_hidden');
         if (editor && hidden) {
-            hidden.value = editor.innerHTML;
+            let html = editor.innerHTML.trim();
+            const edDir = editor.getAttribute('dir') || (editor.style.direction || 'rtl');
+            const edAlign = editor.style.textAlign || (edDir === 'rtl' ? 'right' : 'left');
+            if (html && !html.startsWith('<p') && !html.startsWith('<div') && !html.startsWith('<h') && !html.startsWith('<ul') && !html.startsWith('<ol')) {
+                html = `<p dir="${edDir}" style="text-align: ${edAlign};">${html}</p>`;
+            }
+            hidden.value = html;
         }
     }
 

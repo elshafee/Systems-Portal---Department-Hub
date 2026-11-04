@@ -1,27 +1,39 @@
 {% extends "base.html" %}
 
 {% block title %}Edit Document — {{ SYSTEM_OFFICE_CODE }}{% endblock %}
-{% block page_title %}Edit Serial Number{% endblock %}
-{% block page_subtitle %}Manually override the serial number and regenerate the document{% endblock %}
+{% block page_title %}Edit Document & Content{% endblock %}
+{% block page_subtitle %}تعديل السيريال والبيانات ومحتوى المستند أو استبدال الملف المعتمد{% endblock %}
 
 {% block content %}
 
 <div class="row justify-content-center">
-  <div class="col-lg-6">
+  <div class="col-lg-9 col-xl-8">
 
-    <!-- Current info -->
+    <!-- Current info Card -->
     <div class="card-custom mb-4">
-      <div class="card-header-custom">
-        <div class="icon-wrap"><i class="bi bi-file-earmark-text"></i></div>
+      <div class="card-header-custom" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="icon-wrap"><i class="bi bi-file-earmark-text"></i></div>
+          <div>
+            <h2>Document Overview</h2>
+            <p>Created on {{ doc.created_at.strftime('%d %B %Y at %H:%M') }}</p>
+          </div>
+        </div>
         <div>
-          <h2>Document Info</h2>
-          <p>Uploaded on {{ doc.created_at.strftime('%d %B %Y at %H:%M') }}</p>
+          <span class="badge" style="font-size:12px; font-weight:700; background:{% if doc.office_code == 'ESSIC' %}#2e8de4{% elif doc.office_code == 'HUEED' %}#198754{% elif doc.office_code == 'AIE' %}#0dcaf0{% else %}#64748b{% endif %}; color:#fff;">
+            {{ doc.office_code or SYSTEM_OFFICE_CODE }}
+          </span>
+          {% if doc.status == 'approved' %}
+          <span class="badge ms-1" style="background:#e8f8f1;color:#1a7a4a;border:1px solid #c3e6d6;">Approved</span>
+          {% else %}
+          <span class="badge ms-1" style="background:#fff8e6;color:#9a6c00;border:1px solid #f9e2af;">Pending</span>
+          {% endif %}
         </div>
       </div>
       <div class="card-body-custom">
         <table style="width:100%;font-size:14px;border-collapse:collapse;">
           <tr style="border-bottom:1px solid #f0f4fa;">
-            <td style="padding:10px 0;color:#6b7a8f;width:40%;">Current Code</td>
+            <td style="padding:10px 0;color:#6b7a8f;width:35%;">Current Code</td>
             <td style="padding:10px 0;">
               <span class="code-badge">Code No {{ doc.full_code }}</span>
             </td>
@@ -34,10 +46,22 @@
             <td style="padding:10px 0;color:#6b7a8f;">Serial Number</td>
             <td style="padding:10px 0;font-family:'DM Mono',monospace;font-weight:600;">{{ "%04d" | format(doc.serial_number) }}</td>
           </tr>
-          <tr>
+          <tr style="border-bottom:1px solid #f0f4fa;">
             <td style="padding:10px 0;color:#6b7a8f;">Original File</td>
-            <td style="padding:10px 0;font-size:13px;">{{ doc.filename }}</td>
+            <td style="padding:10px 0;font-size:13px;word-break:break-all;">{{ doc.filename }}</td>
           </tr>
+          {% if doc.generated_filename %}
+          <tr>
+            <td style="padding:10px 0;color:#6b7a8f;">Generated File</td>
+            <td style="padding:10px 0;font-size:13px;word-break:break-all;">
+              <span style="color:#1a7a4a;font-weight:600;"><i class="bi bi-file-earmark-check me-1"></i>{{ doc.generated_filename }}</span>
+              {% set word_url = doc.sharepoint_url if doc.sharepoint_url else get_word_online_url(doc.generated_filename) %}
+              <a href="{{ word_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary ms-2 py-0 px-2" style="font-size:11px;">
+                <i class="bi bi-microsoft"></i> Open in Word Online
+              </a>
+            </td>
+          </tr>
+          {% endif %}
         </table>
       </div>
     </div>
@@ -47,16 +71,17 @@
       <div class="card-header-custom">
         <div class="icon-wrap"><i class="bi bi-pencil-square"></i></div>
         <div>
-          <h2>Change Serial Number</h2>
-          <p>The full code and document will be regenerated automatically</p>
+          <h2>تعديل بيانات ومحتوى الخطاب</h2>
+          <p>تحديث السيريال والبيانات ونص المستند وحفظها بالملف المعتمد مباشرة</p>
         </div>
       </div>
       <div class="card-body-custom">
-        <form method="POST" id="edit-form">
+        <form method="POST" id="edit-form" enctype="multipart/form-data">
 
+          <!-- Serial Number Section -->
           <div style="margin-bottom:20px;">
             <label for="serial_number" style="display:block;font-size:13px;font-weight:600;color:#0f2744;margin-bottom:8px;">
-              New Serial Number
+              الرقم التسلسلي (New Serial Number)
             </label>
             <input
               type="number"
@@ -82,71 +107,194 @@
               onblur="this.style.borderColor='#d0dae8';"
               oninput="updatePreview(this.value)"
             />
-            <div style="font-size:12px;color:#6b7a8f;margin-top:6px;">Between 1 and 9999</div>
+            <div style="font-size:12px;color:#6b7a8f;margin-top:6px;">الرقم بين 1 و 9999</div>
           </div>
 
           <!-- Live preview -->
           <div class="code-preview-box" style="margin-bottom:24px;">
             <div>
-              <div class="label">New code will be</div>
-              <div class="code">Code No <span id="preview-code">{{ "%04d" | format(doc.serial_number) }} {{ SYSTEM_OFFICE_CODE }} {{ "%02d" | format(doc.month) }}-{{ doc.year }}</span></div>
+              <div class="label">الكود الجديد بعد التعديل</div>
+              <div class="code">Code No <span id="preview-code">{{ "%04d" | format(doc.serial_number) }} {{ doc.office_code or SYSTEM_OFFICE_CODE }} {{ "%02d" | format(doc.month) }}-{{ doc.year }}</span></div>
             </div>
           </div>
 
-          <!-- Full document edit fields -->
-          {% if doc.doc_type == 'direct' %}
-          <hr style="margin: 24px 0; border-color: #d0dae8;">
-          <h5 style="font-size: 15px; font-weight: 600; color: #0f2744; margin-bottom: 16px; text-align: right; direction: rtl;">تعديل محتوى المستند</h5>
-          
-          <div class="row" style="direction: rtl; text-align: right;">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">المرسل إليه (Recipient)</label>
-              <input type="text" class="form-control" name="recipient" value="{{ doc.recipient or '' }}" required>
+          <hr style="margin: 24px 0; border-color: #e2e8f0;">
+
+          <!-- Document Metadata fields -->
+          <h5 style="font-size: 15px; font-weight: 700; color: #0f2744; margin-bottom: 16px; text-align: right; direction: rtl;">
+            <i class="bi bi-card-text text-primary me-1"></i> بيانات الخطاب والمراسلة
+          </h5>
+
+          <div style="direction: rtl; text-align: right;">
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">عنوان الملف / المستند (Document Title)</label>
+              <input type="text" class="form-control" name="file_title" value="{{ doc.file_title or '' }}" placeholder="مثال: خطاب تكليف - قسم الذكاء الاصطناعي">
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">الموضوع (Subject)</label>
-              <input type="text" class="form-control" name="subject" value="{{ doc.subject or '' }}" required>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">المرسل إليه (Recipient)</label>
+                <input type="text" class="form-control" name="recipient" value="{{ doc.recipient or '' }}" placeholder="مثال: السيد الأستاذ الدكتور / عميد الكلية">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">الموضوع (Subject)</label>
+                <input type="text" class="form-control" name="subject" value="{{ doc.subject or '' }}" placeholder="مثال: بشأن ترشيح لحضور ورشة عمل">
+              </div>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">عناية السيد (Holder Name)</label>
-              <input type="text" class="form-control" name="holder_name" value="{{ doc.holder_name or '' }}" required>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">عناية السيد (Holder Name)</label>
+                <input type="text" class="form-control" name="holder_name" value="{{ doc.holder_name or '' }}" placeholder="مثال: أ.د. عميد الكلية">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">الصفة (Position)</label>
+                <input type="text" class="form-control" name="position" value="{{ doc.position or '' }}" placeholder="مثال: عميد كلية الهندسة">
+              </div>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">الصفة (Position)</label>
-              <input type="text" class="form-control" name="position" value="{{ doc.position or '' }}" required>
+
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">المرسل (Sender)</label>
+                <input type="text" class="form-control" name="sender" value="{{ doc.sender or '' }}" placeholder="الجهة الراسلة أو مقدم الخطاب">
+              </div>
             </div>
-            <div class="col-md-12 mb-3">
-              <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">المرسل (Sender)</label>
-              <input type="text" class="form-control" name="sender" value="{{ doc.sender or '' }}">
+
+            <div class="d-flex gap-4 mb-3">
+              <div class="form-check" style="padding-right: 0;">
+                <input class="form-check-input float-end ms-2" type="checkbox" name="is_internal" id="is_internal" value="1" {% if doc.is_internal %}checked{% endif %}>
+                <label class="form-check-label" for="is_internal" style="font-weight:600;color:#0f2744;font-size:13px; margin-right: 1.5rem;">
+                  مراسلة داخلية (Internal Correspondence)
+                </label>
+              </div>
+              <div class="form-check" style="padding-right: 0;">
+                <input class="form-check-input float-end ms-2" type="checkbox" name="manager_is_sender" id="manager_is_sender" value="1" {% if doc.manager_is_sender %}checked{% endif %}>
+                <label class="form-check-label" for="manager_is_sender" style="font-weight:600;color:#0f2744;font-size:13px; margin-right: 1.5rem;">
+                  المدير هو الراسل (Manager is Sender)
+                </label>
+              </div>
             </div>
           </div>
 
-          <div class="form-check mb-3" style="text-align: right; direction: rtl; padding-right: 0;">
-            <input class="form-check-input float-end ms-2" type="checkbox" name="is_internal" id="is_internal" value="1" {% if doc.is_internal %}checked{% endif %}>
-            <label class="form-check-label" for="is_internal" style="font-weight:600;color:#0f2744;font-size:13px; margin-right: 1.5rem;">
-              مراسلة داخلية (Internal Correspondence)
-            </label>
-          </div>
-          
+          <hr style="margin: 24px 0; border-color: #e2e8f0;">
+
+          <!-- Rich Text Body Editor Section -->
           <div class="form-group mb-4" style="direction: rtl; text-align: right;">
-            <label class="form-label" style="font-weight:600;color:#0f2744;font-size:13px;">نص المستند (Body Text)</label>
-            <textarea class="form-control" name="full_body" rows="6" required>{{ doc.generated_body or '' }}</textarea>
-            <div style="font-size:12px;color:#6b7a8f;margin-top:6px;">قم بتعديل المحتوى هنا.</div>
-          </div>
-          {% endif %}
+            <label class="form-label" style="font-weight:700;color:#0f2744;font-size:14px; margin-bottom: 8px;">
+              <i class="bi bi-textarea-t text-primary me-1"></i> نص المستند (Body Text)
+            </label>
+            <div style="font-size:12px;color:#6b7a8f;margin-bottom:10px;">
+              يمكنك كتابة وتعديل النص مع ضبط الاتجاه (RTL / LTR) والمحاذاة والتنسيق كاملاً:
+            </div>
 
-          <div class="d-flex gap-3">
-            <button type="submit" class="btn-primary-custom">
-              <i class="bi bi-arrow-repeat"></i> Save & Regenerate
+            <!-- Ribbon Toolbar -->
+            <div class="editor-ribbon-toolbar d-flex flex-wrap align-items-center gap-1 p-2 bg-light border rounded-top" style="border-bottom: 1px solid #dee2e6 !important;">
+              <!-- Headings -->
+              <select class="form-select form-select-sm ribbon-select" style="width: auto; min-width: 110px; font-size:12px;" onchange="applyRibbonHeading(this.value)">
+                <option value="p">فقرة عادية</option>
+                <option value="h1">عنوان رئيسي (H1)</option>
+                <option value="h2">عنوان فرعي (H2)</option>
+                <option value="h3">عنوان جانبي (H3)</option>
+              </select>
+
+              <div class="vr mx-1" style="height: 20px;"></div>
+
+              <!-- Basic Formatting -->
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('bold')" onmousedown="saveCurrentSelection()" title="غامق (Bold)"><i class="bi bi-type-bold"></i></button>
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('italic')" onmousedown="saveCurrentSelection()" title="مائل (Italic)"><i class="bi bi-type-italic"></i></button>
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('underline')" onmousedown="saveCurrentSelection()" title="تسطير (Underline)"><i class="bi bi-type-underline"></i></button>
+              </div>
+
+              <div class="vr mx-1" style="height: 20px;"></div>
+
+              <!-- Text Direction: RTL / LTR -->
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary ribbon-btn active" id="dirRtlBtn" onclick="applyTextDirection('rtl')" onmousedown="saveCurrentSelection()" title="اتجاه النص من اليمين لليسار (Right-to-Left RTL)"><i class="bi bi-text-paragraph" style="transform: scaleX(-1); display:inline-block;"></i> <span style="font-size:11px; font-weight:bold;">RTL</span></button>
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" id="dirLtrBtn" onclick="applyTextDirection('ltr')" onmousedown="saveCurrentSelection()" title="اتجاه النص من اليسار لليمين (Left-to-Right LTR)"><i class="bi bi-text-paragraph"></i> <span style="font-size:11px; font-weight:bold;">LTR</span></button>
+              </div>
+
+              <div class="vr mx-1" style="height: 20px;"></div>
+
+              <!-- Alignment: Right, Center, Left, Justify -->
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary ribbon-btn active" id="alignRightBtn" onclick="applyAlignment('right')" onmousedown="saveCurrentSelection()" title="محاذاة لليمين (Align Right)"><i class="bi bi-text-right"></i></button>
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" id="alignCenterBtn" onclick="applyAlignment('center')" onmousedown="saveCurrentSelection()" title="توسيط (Center)"><i class="bi bi-text-center"></i></button>
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" id="alignLeftBtn" onclick="applyAlignment('left')" onmousedown="saveCurrentSelection()" title="محاذاة لليسار (Align Left)"><i class="bi bi-text-left"></i></button>
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" id="alignJustifyBtn" onclick="applyAlignment('justify')" onmousedown="saveCurrentSelection()" title="ضبط كشيدة (Justify)"><i class="bi bi-justify"></i></button>
+              </div>
+
+              <div class="vr mx-1" style="height: 20px;"></div>
+
+              <!-- Colors -->
+              <div class="btn-group btn-group-sm dropdown" role="group">
+                <button type="button" class="btn btn-outline-secondary ribbon-btn dropdown-toggle d-flex align-items-center gap-1" data-bs-toggle="dropdown" aria-expanded="false" title="لون الخط (Font Color)">
+                  <span style="display:inline-flex; flex-direction:column; align-items:center; line-height:1;">
+                    <i class="bi bi-fonts"></i>
+                    <span id="ribbonTextColorIndicator" style="display:inline-block; width:12px; height:3px; background-color:#0f2744; border-radius:1px; margin-top:1px;"></span>
+                  </span>
+                </button>
+                <ul class="dropdown-menu p-2 shadow-sm" style="min-width: 180px; direction: rtl; text-align: right; z-index: 1055;">
+                  <li><h6 class="dropdown-header px-1 py-0 mb-2" style="font-size:11px;">ألوان شائعة</h6></li>
+                  <li>
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                      <div onclick="applyTextColor('#000000')" style="width:20px;height:20px;background:#000000;border-radius:4px;cursor:pointer;border:1px solid #ccc;" title="أسود"></div>
+                      <div onclick="applyTextColor('#002060')" style="width:20px;height:20px;background:#002060;border-radius:4px;cursor:pointer;border:1px solid #ccc;" title="كحلي رسمي"></div>
+                      <div onclick="applyTextColor('#2e8de4')" style="width:20px;height:20px;background:#2e8de4;border-radius:4px;cursor:pointer;border:1px solid #ccc;" title="أزرق"></div>
+                      <div onclick="applyTextColor('#dc2626')" style="width:20px;height:20px;background:#dc2626;border-radius:4px;cursor:pointer;border:1px solid #ccc;" title="أحمر"></div>
+                      <div onclick="applyTextColor('#16a34a')" style="width:20px;height:20px;background:#16a34a;border-radius:4px;cursor:pointer;border:1px solid #ccc;" title="أخضر"></div>
+                      <div onclick="applyTextColor('#b4871a')" style="width:20px;height:20px;background:#b4871a;border-radius:4px;cursor:pointer;border:1px solid #ccc;" title="ذهبي"></div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Lists -->
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('insertUnorderedList')" onmousedown="saveCurrentSelection()" title="قائمة نقطية (Bullet List)"><i class="bi bi-list-ul"></i></button>
+                <button type="button" class="btn btn-outline-secondary ribbon-btn" onclick="execEditorCommand('insertOrderedList')" onmousedown="saveCurrentSelection()" title="قائمة رقمية (Numbered List)"><i class="bi bi-list-ol"></i></button>
+              </div>
+
+              <div class="vr mx-1" style="height: 20px;"></div>
+
+              <!-- Clear formatting -->
+              <button type="button" class="btn btn-sm btn-outline-secondary ribbon-btn" onclick="execEditorCommand('removeFormat')" onmousedown="saveCurrentSelection()" title="إزالة التنسيق"><i class="bi bi-eraser"></i></button>
+            </div>
+
+            <!-- Contenteditable editor element -->
+            <div id="richBodyEditor" class="form-control rounded-bottom" contenteditable="true" style="min-height: 220px; max-height: 480px; overflow-y: auto; direction: rtl; text-align: right; border-top: none; font-size: 14px; line-height: 1.7; background: #fff;"></div>
+            <textarea class="form-control" name="full_body" id="full_body_hidden" style="display:none;"></textarea>
+          </div>
+
+          <hr style="margin: 24px 0; border-color: #e2e8f0;">
+
+          <!-- Optional Replace Document File -->
+          <div class="card p-3 mb-4" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; direction: rtl; text-align: right;">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-cloud-arrow-up-fill text-primary" style="font-size: 18px;"></i>
+              <label class="form-label mb-0" style="font-weight:700;color:#0f2744;font-size:13px;">
+                استبدال ملف الـ Word المعتمد (اختياري)
+              </label>
+            </div>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+              إذا كنت قد قمت بتعديل الملف الأصلي على برنامج Word في جهازك، يمكنك رفعه هنا ليحل محل الملف الحالي وسيتم تحديثه برقم الكود والمزامنة مع OneDrive تلقائياً.
+            </p>
+            <input type="file" name="docx_file" accept=".docx" class="form-control form-control-sm" style="direction: ltr;">
+          </div>
+
+          <!-- Action buttons -->
+          <div class="d-flex gap-3 justify-content-start">
+            <button type="submit" class="btn-primary-custom" style="padding: 12px 24px; font-size: 15px; font-weight: 700;">
+              <i class="bi bi-check2-circle me-1"></i> حفظ وتحديث المستند (Save & Regenerate)
             </button>
             <a href="{{ url_for('documents') }}" style="
               display:inline-flex;align-items:center;gap:8px;
-              padding:11px 20px;border-radius:8px;
+              padding:12px 20px;border-radius:8px;
               border:1px solid #d0dae8;background:#fff;
               color:#6b7a8f;font-size:14px;font-weight:600;
               text-decoration:none;transition:all .18s;
             " onmouseover="this.style.background='#f0f4fa'" onmouseout="this.style.background='#fff'">
-              <i class="bi bi-arrow-left"></i> Cancel
+              <i class="bi bi-arrow-left"></i> إلغاء (Cancel)
             </a>
           </div>
         </form>
@@ -160,18 +308,266 @@
 
 {% block scripts %}
 <script>
+  let savedRange = null;
+
   function updatePreview(val) {
     const n = parseInt(val) || 0;
     const padded = String(n).padStart(4, '0');
+    const office = '{{ doc.office_code or SYSTEM_OFFICE_CODE }}';
     const month  = '{{ "%02d" | format(doc.month) }}';
     const year   = '{{ doc.year }}';
-    document.getElementById('preview-code').textContent = `${padded} {{ SYSTEM_OFFICE_CODE }} ${month}-${year}`;
+    document.getElementById('preview-code').textContent = `${padded} ${office} ${month}-${year}`;
   }
 
+  function saveCurrentSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      savedRange = sel.getRangeAt(0).cloneRange();
+    }
+  }
+
+  function restoreSavedSelection() {
+    if (savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+  }
+
+  function execEditorCommand(cmd, val = null) {
+    const editor = document.getElementById('richBodyEditor');
+    if (!editor) return;
+    editor.focus();
+    restoreSavedSelection();
+    try {
+      document.execCommand('styleWithCSS', false, true);
+    } catch(e) {}
+    document.execCommand(cmd, false, val);
+    saveCurrentSelection();
+    syncEditorToHidden();
+  }
+
+  function applyRibbonHeading(val) {
+    const editor = document.getElementById('richBodyEditor');
+    if (!editor) return;
+    editor.focus();
+    restoreSavedSelection();
+    if (val === 'p') {
+      document.execCommand('formatBlock', false, '<p>');
+    } else {
+      document.execCommand('formatBlock', false, `<${val}>`);
+    }
+    saveCurrentSelection();
+    syncEditorToHidden();
+  }
+
+  function applyTextColor(color) {
+    if (!color) return;
+    const editor = document.getElementById('richBodyEditor');
+    if (!editor) return;
+    editor.focus();
+    restoreSavedSelection();
+    const indicator = document.getElementById('ribbonTextColorIndicator');
+    if (indicator) indicator.style.backgroundColor = color;
+    try {
+      document.execCommand('styleWithCSS', false, true);
+    } catch(e) {}
+    document.execCommand('foreColor', false, color);
+    saveCurrentSelection();
+    syncEditorToHidden();
+  }
+
+  function applyTextDirection(dir) {
+    const editor = document.getElementById('richBodyEditor');
+    if (!editor) return;
+    editor.focus();
+    restoreSavedSelection();
+
+    const isRtl = (dir === 'rtl');
+    const defaultAlign = isRtl ? 'right' : 'left';
+    editor.setAttribute('dir', dir);
+    editor.style.direction = dir;
+
+    const sel = window.getSelection();
+    let affected = false;
+
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0);
+      const blocks = editor.querySelectorAll('p, div, h1, h2, h3, h4, ul, ol, li');
+      blocks.forEach(b => {
+        if (range.intersectsNode(b)) {
+          b.setAttribute('dir', dir);
+          b.style.direction = dir;
+          if (!b.style.textAlign || (isRtl && b.style.textAlign === 'left') || (!isRtl && b.style.textAlign === 'right')) {
+            b.style.textAlign = defaultAlign;
+          }
+          affected = true;
+        }
+      });
+    }
+
+    if (!affected) {
+      let node = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).commonAncestorContainer : null;
+      let targetBlock = null;
+      while (node && node !== editor) {
+        if (node.nodeType === 1 && ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'UL', 'OL', 'LI'].includes(node.tagName)) {
+          targetBlock = node;
+          break;
+        }
+        node = node.parentNode;
+      }
+
+      if (targetBlock) {
+        targetBlock.setAttribute('dir', dir);
+        targetBlock.style.direction = dir;
+        targetBlock.style.textAlign = defaultAlign;
+      } else {
+        const blocks = editor.querySelectorAll('p, div, h1, h2, h3, h4, ul, ol, li');
+        if (blocks.length > 0) {
+          blocks.forEach(b => {
+            b.setAttribute('dir', dir);
+            b.style.direction = dir;
+            if (!b.style.textAlign || (isRtl && b.style.textAlign === 'left') || (!isRtl && b.style.textAlign === 'right')) {
+              b.style.textAlign = defaultAlign;
+            }
+          });
+        } else if (editor.innerHTML.trim()) {
+          editor.innerHTML = `<p dir="${dir}" style="text-align: ${defaultAlign};">${editor.innerHTML.trim()}</p>`;
+        }
+        editor.style.textAlign = defaultAlign;
+      }
+    }
+
+    const rtlBtn = document.getElementById('dirRtlBtn');
+    const ltrBtn = document.getElementById('dirLtrBtn');
+    if (rtlBtn && ltrBtn) {
+      if (isRtl) {
+        rtlBtn.classList.add('active');
+        ltrBtn.classList.remove('active');
+      } else {
+        ltrBtn.classList.add('active');
+        rtlBtn.classList.remove('active');
+      }
+    }
+
+    // Also update alignment button states
+    updateAlignButtons(defaultAlign);
+
+    saveCurrentSelection();
+    syncEditorToHidden();
+  }
+
+  function applyAlignment(align) {
+    const editor = document.getElementById('richBodyEditor');
+    if (!editor) return;
+    editor.focus();
+    restoreSavedSelection();
+
+    const cmdMap = {
+      'right': 'justifyRight',
+      'center': 'justifyCenter',
+      'left': 'justifyLeft',
+      'justify': 'justifyFull'
+    };
+    try {
+      document.execCommand('styleWithCSS', false, true);
+    } catch(e) {}
+    if (cmdMap[align]) {
+      document.execCommand(cmdMap[align], false, null);
+    }
+
+    const sel = window.getSelection();
+    let node = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).commonAncestorContainer : null;
+    let targetBlock = null;
+    while (node && node !== editor) {
+      if (node.nodeType === 1 && ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'UL', 'OL', 'LI'].includes(node.tagName)) {
+        targetBlock = node;
+        break;
+      }
+      node = node.parentNode;
+    }
+    if (targetBlock) {
+      targetBlock.style.textAlign = align;
+    } else {
+      editor.style.textAlign = align;
+      const blocks = editor.querySelectorAll('p, div, h1, h2, h3, h4, ul, ol, li');
+      blocks.forEach(b => { b.style.textAlign = align; });
+    }
+
+    updateAlignButtons(align);
+    saveCurrentSelection();
+    syncEditorToHidden();
+  }
+
+  function updateAlignButtons(align) {
+    const btnMap = {
+      'right': 'alignRightBtn',
+      'center': 'alignCenterBtn',
+      'left': 'alignLeftBtn',
+      'justify': 'alignJustifyBtn'
+    };
+    Object.keys(btnMap).forEach(k => {
+      const b = document.getElementById(btnMap[k]);
+      if (b) {
+        if (k === align) b.classList.add('active');
+        else b.classList.remove('active');
+      }
+    });
+  }
+
+  function syncEditorToHidden() {
+    const editor = document.getElementById('richBodyEditor');
+    const hidden = document.getElementById('full_body_hidden');
+    if (editor && hidden) {
+      let html = editor.innerHTML.trim();
+      const edDir = editor.getAttribute('dir') || (editor.style.direction || 'rtl');
+      const edAlign = editor.style.textAlign || (edDir === 'rtl' ? 'right' : 'left');
+      if (html && !html.startsWith('<p') && !html.startsWith('<div') && !html.startsWith('<h') && !html.startsWith('<ul') && !html.startsWith('<ol')) {
+        html = `<p dir="${edDir}" style="text-align: ${edAlign};">${html}</p>`;
+      }
+      hidden.value = html;
+    }
+  }
+
+  // Initialize editor content from database
+  document.addEventListener('DOMContentLoaded', function() {
+    const initialBody = {{ (doc.generated_body or '') | tojson }};
+    const editor = document.getElementById('richBodyEditor');
+    if (editor) {
+      if (initialBody) {
+        if (!initialBody.includes('<p') && !initialBody.includes('<div') && !initialBody.includes('<h1') && !initialBody.includes('<ul') && !initialBody.includes('<ol')) {
+          editor.innerHTML = initialBody.split('\n').map(l => `<p dir="rtl" style="text-align: right;">${l || '<br>'}</p>`).join('');
+        } else {
+          editor.innerHTML = initialBody;
+        }
+      } else {
+        editor.innerHTML = '<p dir="rtl" style="text-align: right;"><br></p>';
+      }
+      syncEditorToHidden();
+
+      editor.addEventListener('input', syncEditorToHidden);
+      editor.addEventListener('keyup', () => {
+        saveCurrentSelection();
+        syncEditorToHidden();
+      });
+      editor.addEventListener('mouseup', saveCurrentSelection);
+      editor.addEventListener('blur', syncEditorToHidden);
+      editor.addEventListener('paste', () => {
+        setTimeout(() => {
+          saveCurrentSelection();
+          syncEditorToHidden();
+        }, 10);
+      });
+    }
+  });
+
   document.getElementById('edit-form').addEventListener('submit', function(e) {
+    syncEditorToHidden();
     const btn = this.querySelector('button[type=submit]');
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
-    btn.disabled = true;
+    if (btn) {
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>جارِ الحفظ وإعادة التوليد…';
+      setTimeout(() => { btn.disabled = true; }, 10);
+    }
   });
 </script>
 {% endblock %}
