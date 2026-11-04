@@ -66,9 +66,6 @@ OFFICE_CONFIGS = {
     }
 }
 
-# Alias HUEED to CSED for backward compatibility with existing records & sessions
-OFFICE_CONFIGS['HUEED'] = OFFICE_CONFIGS['CSED']
-
 DEFAULT_OFFICE = os.environ.get("SYSTEM_OFFICE_CODE", "ESSIC")
 if DEFAULT_OFFICE == 'HUEED':
     DEFAULT_OFFICE = 'CSED'

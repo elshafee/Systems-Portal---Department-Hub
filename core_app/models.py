@@ -30,31 +30,55 @@ class User(db.Model):
     def get_allowed_offices_list(self):
         """Returns list of office codes this user is permitted to access."""
         from offices import OFFICE_CONFIGS
-        if self.role == 'admin':
+        import os
+        admin_emails = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "mkhassan@horus.edu.eg,aelshafee@horus.edu.eg").split(",") if e.strip()}
+        if self.email and self.email.lower() in admin_emails:
             return list(OFFICE_CONFIGS.keys())
         raw = (self.allowed_offices or 'ALL').strip().upper()
         if raw == 'ALL' or not raw:
             return list(OFFICE_CONFIGS.keys())
         offices = [o.strip() for o in raw.split(',') if o.strip()]
-        if 'HUEED' in offices and 'CSED' not in offices:
-            offices.append('CSED')
-        if 'CSED' in offices and 'HUEED' not in offices:
-            offices.append('HUEED')
-        valid = [o for o in offices if o in OFFICE_CONFIGS]
+        # Map any legacy HUEED to CSED
+        offices = ['CSED' if o == 'HUEED' else o for o in offices]
+        seen = set()
+        valid = []
+        for o in offices:
+            if o in OFFICE_CONFIGS and o not in seen:
+                seen.add(o)
+                valid.append(o)
         return valid if valid else ['ESSIC']
 
     def can_access_office(self, office_code):
         """Check if user can access a specific office code."""
-        if self.role == 'admin':
-            return True
-        allowed = self.get_allowed_offices_list()
-        req = (office_code or '').upper()
-        if req == 'HUEED':
-            req = 'CSED'
-        return req in allowed or office_code in allowed
         if not office_code:
             return False
-        return office_code.upper() in self.get_allowed_offices_list()
+        import os
+        admin_emails = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "mkhassan@horus.edu.eg,aelshafee@horus.edu.eg").split(",") if e.strip()}
+        if self.email and self.email.lower() in admin_emails:
+            return True
+        req = office_code.upper()
+        if req == 'HUEED':
+            req = 'CSED'
+        return req in self.get_allowed_offices_list()
+
+    def is_super_admin(self):
+        """Returns True if user is a super admin with system-wide access across all departments."""
+        import os
+        admin_emails = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "mkhassan@horus.edu.eg,aelshafee@horus.edu.eg").split(",") if e.strip()}
+        if self.email and self.email.lower() in admin_emails:
+            return True
+        if self.role != 'admin':
+            return False
+        raw = (self.allowed_offices or 'ALL').strip().upper()
+        return raw == 'ALL'
+
+    def is_office_admin(self, office_code=None):
+        """Returns True if user has admin privileges for the given office."""
+        if self.role != 'admin':
+            return False
+        if not office_code or office_code.upper() == 'ALL':
+            return True
+        return self.can_access_office(office_code)
 
     def __repr__(self):
         return f"<User {self.email}>"

@@ -258,7 +258,7 @@
               </a>
               <!-- Delete -->
               <form method="POST" action="{{ url_for('delete', doc_id=doc.id) }}" style="display:inline;"
-                onsubmit="return confirm('Delete Code No {{ doc.full_code }}?\n\nThis will remove the record and its generated file.');">
+                onsubmit="return handleDocDelete(this, '{{ doc.full_code }}');">
                 <button type="submit" class="action-btn danger" title="Delete">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -857,6 +857,27 @@ function selectTrackStatus(docId, status) {
       sentDateInput.value = new Date().toISOString().split('T')[0];
     }
   }
+}
+
+function handleDocDelete(form, code) {
+  if (!confirm(`Delete Code No ${code}?\n\nThis will remove the record and its generated file.`)) {
+    return false;
+  }
+  const btn = form.querySelector('button');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width:0.85rem;height:0.85rem;border-width:2px;"></span>';
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'not-allowed';
+    btn.style.pointerEvents = 'none';
+  }
+  const row = form.closest('tr');
+  if (row) {
+    row.style.opacity = '0.4';
+    row.style.pointerEvents = 'none';
+    row.style.transition = 'opacity 0.3s ease';
+  }
+  return true;
 }
 
 document.addEventListener("DOMContentLoaded", function() {

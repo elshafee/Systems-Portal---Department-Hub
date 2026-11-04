@@ -115,6 +115,20 @@ def login_required(f):
     return decorated_function
 
 
+def is_current_user_super_admin(user_email=None):
+    if not user_email:
+        user_email = session.get('user', {}).get('email', '')
+    if not user_email:
+        return False
+    if user_email in ADMIN_EMAILS:
+        return True
+    user = User.query.filter_by(email=user_email).first()
+    if not user or user.role != 'admin':
+        return False
+    raw = (user.allowed_offices or 'ALL').strip().upper()
+    return raw == 'ALL'
+
+
 def is_current_user_admin(user_email=None):
     if not user_email:
         user_email = session.get('user', {}).get('email', '')
@@ -144,7 +158,7 @@ def get_user_allowed_offices(user_email=None):
         user_email = session.get('user', {}).get('email', '')
     if not user_email:
         return list(OFFICE_CONFIGS.keys())
-    if is_current_user_admin(user_email):
+    if user_email in ADMIN_EMAILS:
         return list(OFFICE_CONFIGS.keys())
     user = User.query.filter_by(email=user_email).first()
     if not user:
@@ -154,17 +168,23 @@ def get_user_allowed_offices(user_email=None):
 
 def user_can_access_office(office_code, user_email=None):
     """Check if user is authorized to access a given department."""
-    if is_current_user_admin(user_email):
+    if not user_email:
+        user_email = session.get('user', {}).get('email', '')
+    if user_email in ADMIN_EMAILS:
         return True
     if not office_code:
         return False
+    code = office_code.upper()
+    if code == 'HUEED':
+        code = 'CSED'
     allowed = get_user_allowed_offices(user_email)
-    return office_code.upper() in allowed
+    return code in allowed
 
 
 @app.context_processor
 def inject_globals():
     is_admin = is_current_user_admin()
+    is_super = is_current_user_super_admin()
     from offices import get_current_office, set_current_office, OFFICE_CONFIGS
 
     user_email = session.get('user', {}).get('email', '')
@@ -188,6 +208,7 @@ def inject_globals():
     from services.onedrive import get_word_online_url
     return dict(
         is_admin=is_admin,
+        is_super_admin=is_super,
         get_word_online_url=get_word_online_url,
         GATEWAY_URL=GATEWAY_URL,
         SYSTEM_OFFICE_CODE=curr_office['code'],
@@ -206,6 +227,8 @@ def inject_globals():
 @app.route('/switch_office/<office_code>')
 def switch_office(office_code):
     office_code = office_code.upper()
+    if office_code == 'HUEED':
+        office_code = 'CSED'
     if not user_can_access_office(office_code):
         flash(f"ليس لديك صلاحية للدخول إلى قسم {office_code} (Permission Denied).", "danger")
         return redirect(url_for('portal'))
@@ -232,10 +255,11 @@ def portal():
 
     office_stats = {}
     for code in OFFICE_CONFIGS:
-        total_docs = Document.query.filter_by(office_code=code).count()
-        total_sent = Document.query.filter_by(office_code=code, is_sent=True).count()
-        awaiting = Document.query.filter_by(office_code=code, is_sent=True, response_status='awaiting_response').count()
-        received = Document.query.filter_by(office_code=code, response_status='received').count()
+        search_codes = ['CSED', 'HUEED'] if code == 'CSED' else [code]
+        total_docs = Document.query.filter(Document.office_code.in_(search_codes)).count()
+        total_sent = Document.query.filter(Document.office_code.in_(search_codes), Document.is_sent == True).count()
+        awaiting = Document.query.filter(Document.office_code.in_(search_codes), Document.is_sent == True, Document.response_status == 'awaiting_response').count()
+        received = Document.query.filter(Document.office_code.in_(search_codes), Document.response_status == 'received').count()
         office_stats[code] = {
             'total_docs': total_docs,
             'total_sent': total_sent,
@@ -264,6 +288,17 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if not is_current_user_admin():
             flash("You do not have permission to access this page.", "danger")
+            return redirect(url_for('documents'))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+def super_admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_current_user_super_admin():
+            flash("Super Administrator access required to access this page.", "danger")
             return redirect(url_for('documents'))
         return f(*args, **kwargs)
 
@@ -653,7 +688,7 @@ def index():
 
                     # Determine sender value for template
                     sender_value = ""
-                    sender_top = f"\u202A{sender}\u202C" if sender else f"\u202A{default_sender}\u202C"
+                    sender_top = f"\u202B{sender}\u202C" if sender else f"\u202B{default_sender}\u202C"
                     
                     # If external OR manager is sender -> sender_value stays empty (manager signature kept)
                     # Only if internal AND NOT manager -> employee signature used
@@ -707,8 +742,8 @@ def index():
                     remove_manager = (is_internal and not manager_is_sender)
                     replace_placeholders(upload_path, generated_path, {
                         "{{CODE_NUMBER}}": full_code,
-                        "{{SEND_TO}}": ("\u202A" + normalize_recipient(recipient) + "\u202C") if recipient else "",
-                        "{{SUBJECT}}": "\u202A" + subject + "\u202C",
+                        "{{SEND_TO}}": ("\u202B" + normalize_recipient(recipient) + "\u202C") if recipient else "",
+                        "{{SUBJECT}}": "\u202B" + subject + "\u202C",
                         "{{STACK_HOLDER}}": "\u202B" + holder_name + "\u202C",
                         "{{POSITION}}": "\u202B" + position + "\u202C",
                         "{{BODY_TEXT}}": "\u202B" + full_body + "\u202C",
@@ -752,9 +787,9 @@ def index():
             # Upload to OneDrive using the onedrive service
             from services.onedrive import upload_file_to_share, LAST_ERROR
             if os.environ.get("ONEDRIVE_SHARE_URL"):
-                success = upload_file_to_share(generated_path, generated_name)
+                success = upload_file_to_share(generated_path, generated_name, office_code=office_code)
                 if generated_pdf_name:
-                    upload_file_to_share(generated_pdf_path, generated_pdf_name)
+                    upload_file_to_share(generated_pdf_path, generated_pdf_name, office_code=office_code)
                 
                 # Cleanup preview
                 old_preview = session.pop('last_preview_filename', None)
@@ -768,7 +803,7 @@ def index():
                         except Exception:
                             pass
                     from services.onedrive import delete_file_from_share
-                    delete_file_from_share(old_preview, is_preview=True)
+                    delete_file_from_share(old_preview, is_preview=True, office_code=office_code)
                 
                 if success:
                     if status == 'approved':
@@ -875,12 +910,13 @@ def documents():
     from offices import get_current_office
     curr_office = get_current_office()
     is_admin = is_current_user_admin()
+    is_super = is_current_user_super_admin()
     allowed_offices = get_user_allowed_offices()
 
     selected_office = request.args.get('office', curr_office['code'])
 
     # Enforce department access permissions
-    if not is_admin:
+    if not is_super:
         if selected_office and selected_office.upper() != 'ALL':
             if selected_office.upper() not in allowed_offices:
                 selected_office = allowed_offices[0]
@@ -889,15 +925,15 @@ def documents():
                 selected_office = allowed_offices[0]
 
     query = Document.query
-    if is_admin:
-        if selected_office and selected_office.upper() != 'ALL':
-            query = query.filter_by(office_code=selected_office.upper())
-    else:
-        # Permitted department users access all documents in their allowed departments
-        if selected_office and selected_office.upper() != 'ALL':
-            query = query.filter_by(office_code=selected_office.upper())
-        else:
-            query = query.filter(Document.office_code.in_(allowed_offices))
+    if selected_office and selected_office.upper() != 'ALL':
+        sel = selected_office.upper()
+        search_codes = ['CSED', 'HUEED'] if sel in ('CSED', 'HUEED') else [sel]
+        query = query.filter(Document.office_code.in_(search_codes))
+    elif not is_super:
+        effective_allowed = list(allowed_offices)
+        if 'CSED' in effective_allowed and 'HUEED' not in effective_allowed:
+            effective_allowed.append('HUEED')
+        query = query.filter(Document.office_code.in_(effective_allowed))
 
     all_docs = query.order_by(Document.created_at.desc()).all()
     return render_template(
@@ -905,6 +941,7 @@ def documents():
         documents=all_docs,
         now=datetime.now(),
         is_admin=is_admin,
+        is_super_admin=is_super,
         selected_office=selected_office,
         allowed_offices=allowed_offices
     )
@@ -917,12 +954,13 @@ def tracking():
     from offices import get_current_office
     curr_office = get_current_office()
     is_admin = is_current_user_admin()
+    is_super = is_current_user_super_admin()
     allowed_offices = get_user_allowed_offices()
 
     selected_office = request.args.get('office', curr_office['code'])
 
     # Enforce department access permissions
-    if not is_admin:
+    if not is_super:
         if selected_office and selected_office.upper() != 'ALL':
             if selected_office.upper() not in allowed_offices:
                 selected_office = allowed_offices[0]
@@ -931,15 +969,15 @@ def tracking():
                 selected_office = allowed_offices[0]
 
     query = Document.query
-    if is_admin:
-        if selected_office and selected_office.upper() != 'ALL':
-            query = query.filter_by(office_code=selected_office.upper())
-    else:
-        # Permitted department users access all tracking rows in their allowed departments
-        if selected_office and selected_office.upper() != 'ALL':
-            query = query.filter_by(office_code=selected_office.upper())
-        else:
-            query = query.filter(Document.office_code.in_(allowed_offices))
+    if selected_office and selected_office.upper() != 'ALL':
+        sel = selected_office.upper()
+        search_codes = ['CSED', 'HUEED'] if sel in ('CSED', 'HUEED') else [sel]
+        query = query.filter(Document.office_code.in_(search_codes))
+    elif not is_super:
+        effective_allowed = list(allowed_offices)
+        if 'CSED' in effective_allowed and 'HUEED' not in effective_allowed:
+            effective_allowed.append('HUEED')
+        query = query.filter(Document.office_code.in_(effective_allowed))
 
     all_docs = query.order_by(Document.created_at.desc()).all()
 
@@ -983,8 +1021,7 @@ def update_document_tracking(doc_id):
     """Update tracking and response info for an internal document."""
     doc = Document.query.get_or_404(doc_id)
     user_email = session.get('user', {}).get('email', '')
-    allowed_offices = get_user_allowed_offices()
-    if not is_current_user_admin() and doc.email != user_email and doc.office_code not in allowed_offices:
+    if not user_can_access_office(doc.office_code, user_email):
         flash("You do not have permission to edit this document's tracking info.", "danger")
         return redirect(request.referrer or url_for('tracking'))
 
@@ -1322,7 +1359,7 @@ def preview_document():
             default_sender = remove_office_code(default_sender)
 
             sender_value = ""
-            sender_top = f"\u202A{sender}\u202C" if sender else f"\u202A{default_sender}\u202C"
+            sender_top = f"\u202B{sender}\u202C" if sender else f"\u202B{default_sender}\u202C"
             if is_internal and not manager_is_sender and sender:
                 sender_value = f"\u202Bمقدمه لسيادتكم\n{sender}\u202C"
 
@@ -1372,8 +1409,8 @@ def preview_document():
 
             replace_placeholders(upload_path, temp_docx_path, {
                 "{{CODE_NUMBER}}": full_code,
-                "{{SEND_TO}}": ("\u202A" + normalize_recipient(recipient) + "\u202C") if recipient else "",
-                "{{SUBJECT}}": "\u202A" + subject + "\u202C",
+                "{{SEND_TO}}": ("\u202B" + normalize_recipient(recipient) + "\u202C") if recipient else "",
+                "{{SUBJECT}}": "\u202B" + subject + "\u202C",
                 "{{STACK_HOLDER}}": "\u202B" + holder_name + "\u202C",
                 "{{POSITION}}": "\u202B" + position + "\u202C",
                 "{{BODY_TEXT}}": "\u202B" + full_body + "\u202C",
@@ -1397,7 +1434,7 @@ def preview_document():
             
         # Upload the temporary preview doc to OneDrive previews folder
         if os.environ.get("ONEDRIVE_PREVIEW_SHARE_URL") or os.environ.get("ONEDRIVE_SHARE_URL"):
-            success = upload_file_to_share(temp_docx_path, gen_name, is_preview=True)
+            success = upload_file_to_share(temp_docx_path, gen_name, is_preview=True, office_code=office_code)
             if success:
                 from services.onedrive import delete_file_from_share
                 form_hash = compute_dashboard_form_hash(request.form)
@@ -1406,7 +1443,7 @@ def preview_document():
                 session['last_preview_code'] = full_code
                 session.modified = True
                 
-                url = get_word_online_url(gen_name, is_preview=True)
+                url = get_word_online_url(gen_name, is_preview=True, office_code=office_code)
                 return jsonify({
                     "success": True, 
                     "word_online_url": url,
@@ -1494,9 +1531,9 @@ def upload_reserved(doc_id):
         if status == 'approved':
             from services.onedrive import upload_file_to_share
             if os.environ.get("ONEDRIVE_SHARE_URL"):
-                upload_file_to_share(generated_path, generated_name)
+                upload_file_to_share(generated_path, generated_name, office_code=doc.office_code)
                 if generated_pdf_name:
-                    upload_file_to_share(generated_pdf_path, generated_pdf_name)
+                    upload_file_to_share(generated_pdf_path, generated_pdf_name, office_code=doc.office_code)
                     
         doc.status = status
         db.session.commit()
@@ -1617,7 +1654,7 @@ def edit(doc_id):
                 default_sender = remove_office_code(default_sender)
 
                 sender_value = ""
-                sender_top = f"\u202A{doc.sender}\u202C" if doc.sender else f"\u202A{default_sender}\u202C"
+                sender_top = f"\u202B{doc.sender}\u202C" if doc.sender else f"\u202B{default_sender}\u202C"
                 if doc.is_internal and not doc.manager_is_sender and doc.sender:
                     sender_value = f"\u202Bمقدمه لسيادتكم\n{doc.sender}\u202C"
 
@@ -1630,8 +1667,8 @@ def edit(doc_id):
 
                 replace_placeholders(tmpl_path, new_generated_path, {
                     "{{CODE_NUMBER}}": new_full_code,
-                    "{{SEND_TO}}": ("\u202A" + normalize_recipient(doc.recipient) + "\u202C") if doc.recipient else "",
-                    "{{SUBJECT}}": "\u202A" + doc.subject + "\u202C",
+                    "{{SEND_TO}}": ("\u202B" + normalize_recipient(doc.recipient) + "\u202C") if doc.recipient else "",
+                    "{{SUBJECT}}": "\u202B" + doc.subject + "\u202C",
                     "{{STACK_HOLDER}}": "\u202B" + (doc.holder_name or "") + "\u202C",
                     "{{POSITION}}": "\u202B" + (doc.position or "") + "\u202C",
                     "{{BODY_TEXT}}": body_to_use or "",
@@ -1685,7 +1722,7 @@ def edit(doc_id):
 
         from services.onedrive import get_word_online_url, upload_file_to_share, delete_file_from_share
         try:
-            doc.sharepoint_url = get_word_online_url(new_generated_name)
+            doc.sharepoint_url = get_word_online_url(new_generated_name, office_code=doc.office_code)
         except Exception:
             pass
 
@@ -1694,19 +1731,19 @@ def edit(doc_id):
         # Sync to OneDrive
         if os.environ.get("ONEDRIVE_SHARE_URL"):
             if old_generated_filename and old_generated_filename != new_generated_name:
-                try: delete_file_from_share(old_generated_filename)
+                try: delete_file_from_share(old_generated_filename, office_code=doc.office_code)
                 except Exception: pass
             if old_generated_pdf_filename and old_generated_pdf_filename != new_pdf_file:
-                try: delete_file_from_share(old_generated_pdf_filename)
+                try: delete_file_from_share(old_generated_pdf_filename, office_code=doc.office_code)
                 except Exception: pass
 
-            up_ok = upload_file_to_share(new_generated_path, new_generated_name)
+            up_ok = upload_file_to_share(new_generated_path, new_generated_name, office_code=doc.office_code)
             if not up_ok:
                 from services.onedrive import LAST_ERROR
                 if LAST_ERROR:
                     flash(f"تنبيه المزامنة مع OneDrive: {LAST_ERROR}", "warning")
             if new_pdf_file and os.path.exists(new_generated_pdf_path):
-                upload_file_to_share(new_generated_pdf_path, new_pdf_file)
+                upload_file_to_share(new_generated_pdf_path, new_pdf_file, office_code=doc.office_code)
 
         flash(f"تم تحديث المستند بنجاح: <strong>{new_full_code}</strong>", "success")
         return redirect(url_for("documents"))
@@ -1742,26 +1779,61 @@ def edit(doc_id):
 @login_required
 def delete(doc_id):
     """Delete a document record and its generated file."""
-    doc = Document.query.get_or_404(doc_id)
+    doc = Document.query.get(doc_id)
+    if not doc:
+        flash("المستند تم حذفه بالفعل أو غير موجود.", "info")
+        return redirect(url_for("documents"))
+
     if not user_can_access_office(doc.office_code):
         flash("You do not have permission to delete this document.", "danger")
         return redirect(url_for("documents"))
 
-    # Remove generated files from disk
-    if doc.generated_filename:
-        gen_path = os.path.join(GENERATED_FOLDER, doc.generated_filename)
+    # Capture details before DB removal
+    gen_filename = doc.generated_filename
+    gen_pdf_filename = doc.generated_pdf_filename
+    office_code = doc.office_code
+    full_code = doc.full_code
+
+    # Remove generated files from disk immediately
+    if gen_filename:
+        gen_path = os.path.join(GENERATED_FOLDER, gen_filename)
         if os.path.exists(gen_path):
-            os.remove(gen_path)
+            try:
+                os.remove(gen_path)
+            except OSError:
+                pass
             
-    if doc.generated_pdf_filename:
-        gen_pdf_path = os.path.join(GENERATED_FOLDER, doc.generated_pdf_filename)
+    if gen_pdf_filename:
+        gen_pdf_path = os.path.join(GENERATED_FOLDER, gen_pdf_filename)
         if os.path.exists(gen_pdf_path):
-            os.remove(gen_pdf_path)
+            try:
+                os.remove(gen_pdf_path)
+            except OSError:
+                pass
 
     db.session.delete(doc)
     db.session.commit()
 
-    flash("Document record deleted.", "info")
+    # Background async deletion on OneDrive to ensure instant response (<50ms)
+    def _async_onedrive_delete(f_docx, f_pdf, off_code):
+        try:
+            from services.onedrive import delete_file_from_share
+            if f_docx:
+                delete_file_from_share(f_docx, is_preview=False, office_code=off_code)
+            if f_pdf:
+                delete_file_from_share(f_pdf, is_preview=False, office_code=off_code)
+        except Exception as e:
+            print(f"[Async OneDrive Delete Error] {e}")
+
+    if gen_filename or gen_pdf_filename:
+        import threading
+        threading.Thread(
+            target=_async_onedrive_delete,
+            args=(gen_filename, gen_pdf_filename, office_code),
+            daemon=True
+        ).start()
+
+    flash(f"تم حذف المستند {full_code} بنجاح.", "info")
     return redirect(url_for("documents"))
 
 
@@ -1772,6 +1844,11 @@ def approve(doc_id):
     """Approve a pending document and upload to OneDrive."""
 
     doc = Document.query.get_or_404(doc_id)
+    user_email = session.get('user', {}).get('email', '')
+    if not user_can_access_office(doc.office_code, user_email):
+        flash(f"You do not have permission to approve documents for department {doc.office_code}.", "danger")
+        return redirect(url_for("documents"))
+
     if doc.status == 'approved':
         flash("Document is already approved.", "info")
         return redirect(url_for("documents"))
@@ -1793,12 +1870,12 @@ def approve(doc_id):
         generated_path = os.path.join(GENERATED_FOLDER, doc.generated_filename)
         from services.onedrive import upload_file_to_share, LAST_ERROR
         if os.environ.get("ONEDRIVE_SHARE_URL") and os.path.exists(generated_path):
-            success = upload_file_to_share(generated_path, doc.generated_filename)
+            success = upload_file_to_share(generated_path, doc.generated_filename, office_code=doc.office_code)
             # Also upload the PDF if available
             if doc.generated_pdf_filename:
                 pdf_path = os.path.join(GENERATED_FOLDER, doc.generated_pdf_filename)
                 if os.path.exists(pdf_path):
-                    upload_file_to_share(pdf_path, doc.generated_pdf_filename)
+                    upload_file_to_share(pdf_path, doc.generated_pdf_filename, office_code=doc.office_code)
             if success:
                 flash(f"Document {doc.full_code} approved and uploaded to OneDrive!", "success")
             else:
@@ -1819,6 +1896,11 @@ def approve(doc_id):
 def reject(doc_id):
     """Reject a pending document."""
     doc = Document.query.get_or_404(doc_id)
+    user_email = session.get('user', {}).get('email', '')
+    if not user_can_access_office(doc.office_code, user_email):
+        flash(f"You do not have permission to reject documents for department {doc.office_code}.", "danger")
+        return redirect(url_for("documents"))
+
     if doc.status != 'pending':
         flash("Only pending documents can be rejected.", "warning")
         return redirect(url_for("documents"))
@@ -1831,7 +1913,7 @@ def reject(doc_id):
 
 @app.route("/users")
 @login_required
-@admin_required
+@super_admin_required
 def users():
     """User Management Page."""
     super_admin = "aelshafee@horus.edu.eg"
@@ -1848,7 +1930,7 @@ def users():
 
 @app.route("/users/role/<email>", methods=["POST"])
 @login_required
-@admin_required
+@super_admin_required
 def toggle_user_role(email):
     user = User.query.filter_by(email=email).first_or_404()
     if user.email in ADMIN_EMAILS:
@@ -1862,7 +1944,7 @@ def toggle_user_role(email):
 
 @app.route("/users/delete/<email>", methods=["POST"])
 @login_required
-@admin_required
+@super_admin_required
 def delete_user(email):
     user = User.query.filter_by(email=email).first_or_404()
     if user.email in ADMIN_EMAILS:
@@ -1876,7 +1958,7 @@ def delete_user(email):
 
 @app.route("/users/add", methods=["POST"])
 @login_required
-@admin_required
+@super_admin_required
 def add_user():
     name = request.form.get("name", "").strip()
     email = request.form.get("email", "").strip().lower()
@@ -1907,13 +1989,13 @@ def add_user():
     )
     db.session.add(user)
     db.session.commit()
-    flash(f"User {name} added successfully with access to {allowed_str}.", "success")
+    flash(f"User {name} added successfully as {role} with access to {allowed_str}.", "success")
     return redirect(url_for("users"))
 
 
 @app.route("/users/edit/<email>", methods=["POST"])
 @login_required
-@admin_required
+@super_admin_required
 def edit_user(email):
     user = User.query.filter_by(email=email).first_or_404()
 
@@ -2106,13 +2188,13 @@ def ai_finalize():
     sender = remove_office_code(sender)
     default_sender = remove_office_code(default_sender)
 
-    sender_top = f"\u202A{sender}\u202C" if sender else f"\u202A{default_sender}\u202C"
+    sender_top = f"\u202B{sender}\u202C" if sender else f"\u202B{default_sender}\u202C"
 
     try:
         replace_placeholders(upload_path, gen_path, {
             "{{CODE_NUMBER}}": code,
-            "{{SEND_TO}}": "\u202A" + normalize_recipient(recipient) + "\u202C" if recipient else "",
-            "{{SUBJECT}}": "\u202A" + subject + "\u202C",
+            "{{SEND_TO}}": "\u202B" + normalize_recipient(recipient) + "\u202C" if recipient else "",
+            "{{SUBJECT}}": "\u202B" + subject + "\u202C",
             "{{STACK_HOLDER}}": "\u202B" + holder_name + "\u202C",
             "{{POSITION}}": "\u202B" + position + "\u202C",
             "{{BODY_TEXT}}": "\u202B" + full_body + "\u202C",
@@ -2167,10 +2249,10 @@ def ai_finalize():
     if gen_name:
         from services.onedrive import upload_file_to_share
         if os.environ.get("ONEDRIVE_SHARE_URL"):
-            upload_success = upload_file_to_share(gen_path, gen_name)
+            upload_success = upload_file_to_share(gen_path, gen_name, office_code=office_code)
             try:
                 from services.onedrive import get_word_online_url
-                doc.sharepoint_url = get_word_online_url(gen_name)
+                doc.sharepoint_url = get_word_online_url(gen_name, office_code=office_code)
                 db.session.commit()
             except Exception:
                 pass

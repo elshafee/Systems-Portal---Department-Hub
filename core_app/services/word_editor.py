@@ -16,7 +16,7 @@ import os
 import re
 from docx import Document
 from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls
@@ -173,13 +173,17 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str):
         for s in doc.sections:
             if s.bottom_margin.pt < 155:
                 s.bottom_margin = Pt(160)
-            if s.footer_distance.pt < 100:
-                s.footer_distance = Pt(115)
+            s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
             if not pPr.xpath('w:pBdr/w:top'):
                 pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:top w:val="single" w:sz="12" w:space="6" w:color="AD8934"/></w:pBdr>')
                 pPr.append(pBdr)
+            # Indent from the left so the line does not cross into the decorative corner wave graphic on the bottom-left
+            if not pPr.xpath('w:ind'):
+                pPr.append(parse_xml(f'<w:ind {nsdecls("w")} w:left="3400"/>'))
+            else:
+                pPr.xpath('w:ind')[0].set(qn('w:left'), '3400')
 
     # 1. Body paragraphs
     for paragraph in doc.paragraphs:
@@ -196,6 +200,9 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str):
         _replace_in_header_footer(section.even_page_header, replacement)
         _replace_in_header_footer(section.even_page_footer, replacement)
         _replace_in_header_footer(section.first_page_footer, replacement)
+
+    if is_vice_dean_doc:
+        clean_vice_dean_tables(doc)
 
     doc.save(output_path)
 
@@ -226,13 +233,17 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str):
         for s in doc.sections:
             if s.bottom_margin.pt < 155:
                 s.bottom_margin = Pt(160)
-            if s.footer_distance.pt < 100:
-                s.footer_distance = Pt(115)
+            s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
             if not pPr.xpath('w:pBdr/w:top'):
                 pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:top w:val="single" w:sz="12" w:space="6" w:color="AD8934"/></w:pBdr>')
                 pPr.append(pBdr)
+            # Indent from the left so the line does not cross into the decorative corner wave graphic on the bottom-left
+            if not pPr.xpath('w:ind'):
+                pPr.append(parse_xml(f'<w:ind {nsdecls("w")} w:left="3400"/>'))
+            else:
+                pPr.xpath('w:ind')[0].set(qn('w:left'), '3400')
 
     def _clean_text(text: str):
         if not text:
@@ -284,6 +295,9 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str):
                 for t in part.tables:
                     _process_t(t)
 
+    if is_vice_dean_doc:
+        clean_vice_dean_tables(doc)
+
     doc.save(output_path)
 
 
@@ -326,6 +340,179 @@ def update_code_in_docx(file_path: str, old_code: str, new_code: str):
     doc.save(file_path)
 
 
+def format_vice_dean_code_paragraph(paragraph, full_text=None):
+    """
+    Formats the Vice Dean / CSED code paragraph so that:
+      - 'No. X ' is deep blue (#002060)
+      - 'ENG.CSED ' is gold (#AD8934)
+      - 'DD-MM-YYYY' is deep blue (#002060)
+    """
+    if full_text is None:
+        full_text = "".join(r.text for r in paragraph.runs)
+        
+    pattern = re.compile(r'^(.*?\bNo\.?\s*\d+\s+)(ENG\.CSED\s+|CSED\s+)(\d{1,2}-\d{1,2}-\d{4}.*)$', re.IGNORECASE)
+    m = pattern.search(full_text.strip())
+    if not m:
+        return False
+        
+    part_no = m.group(1)
+    part_office = m.group(2)
+    part_date = m.group(3)
+    
+    # Preserve leading indentation if any was present in the original paragraph text
+    leading_spaces = len(full_text) - len(full_text.lstrip())
+    if leading_spaces > 0 and not part_no.startswith(' '):
+        part_no = (' ' * leading_spaces) + part_no
+        
+    for r in list(paragraph.runs):
+        paragraph._element.remove(r._element)
+        
+    pPr = paragraph._element.get_or_add_pPr()
+    existing_rPr = pPr.find(qn('w:rPr'))
+    if existing_rPr is not None:
+        pPr.remove(existing_rPr)
+        
+    def _add_styled_run(text, color_hex, rgb):
+        r = paragraph.add_run(text)
+        r.font.name = 'Arial Unicode MS'
+        r.font.size = Pt(11)
+        r.bold = True
+        r.font.color.rgb = rgb
+        rPr = r._r.get_or_add_rPr()
+        c_el = rPr.find(qn('w:color'))
+        if c_el is not None:
+            c_el.set(qn('w:val'), color_hex)
+        else:
+            c_el = parse_xml(f'<w:color {nsdecls("w")} w:val="{color_hex}"/>')
+            rPr.append(c_el)
+        for child in list(rPr):
+            if 'textFill' in child.tag:
+                rPr.remove(child)
+        w14_fill = parse_xml(f'<w14:textFill xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w14:solidFill><w14:srgbClr w14:val="{color_hex.upper()}"/></w14:solidFill></w14:textFill>')
+        rPr.append(w14_fill)
+        return r
+
+    _add_styled_run(part_no, '002060', RGBColor(0x00, 0x20, 0x60))
+    _add_styled_run(part_office, 'ad8934', RGBColor(0xAD, 0x89, 0x34))
+    _add_styled_run(part_date, '002060', RGBColor(0x00, 0x20, 0x60))
+    return True
+
+
+def clean_vice_dean_tables(doc):
+    """
+    Cleans up Vice Dean document tables to ensure:
+    1. No blue shading (cadfff) or white borders in Table 0, Table 1, Table 2.
+    2. Table 1 values (Column 0: Sender, Recipient, Subject) are right-aligned (RTL)
+       and colored in gold (#AD8934), with any blue font (081F5C) or underlines removed.
+    3. Paragraph 1 (Code paragraph) has No. X & Date in deep blue (#002060) and ENG.CSED in gold (#AD8934).
+    """
+    for t_idx, t in enumerate(doc.tables):
+        tblPr = t._element.tblPr
+        shd = tblPr.find(qn('w:shd'))
+        if shd is not None:
+            tblPr.remove(shd)
+        
+        # Table 0 (Header/Logo) and Table 2 (Signature) should have nil borders
+        if t_idx in (0, 2):
+            bdr = tblPr.find(qn('w:tblBorders'))
+            if bdr is not None:
+                tblPr.remove(bdr)
+            new_bdr = parse_xml(
+                f'<w:tblBorders {nsdecls("w")}>'
+                f'  <w:top w:val="nil"/>'
+                f'  <w:left w:val="nil"/>'
+                f'  <w:bottom w:val="nil"/>'
+                f'  <w:right w:val="nil"/>'
+                f'  <w:insideH w:val="nil"/>'
+                f'  <w:insideV w:val="nil"/>'
+                f'</w:tblBorders>'
+            )
+            tblPr.append(new_bdr)
+            for row in t.rows:
+                for cell in row.cells:
+                    tcPr = cell._tc.get_or_add_tcPr()
+                    tcShd = tcPr.find(qn('w:shd'))
+                    if tcShd is not None:
+                        tcPr.remove(tcShd)
+                    tcBdr = tcPr.find(qn('w:tcBorders'))
+                    if tcBdr is not None:
+                        tcPr.remove(tcBdr)
+
+        elif t_idx == 1 and len(t.rows) == 3 and len(t.columns) == 2:
+            # Table 1: Metadata table (الراسل, المرسل إليه, الموضوع)
+            bdr = tblPr.find(qn('w:tblBorders'))
+            if bdr is not None:
+                tblPr.remove(bdr)
+            new_bdr = parse_xml(
+                f'<w:tblBorders {nsdecls("w")}>'
+                f'  <w:top w:val="nil"/>'
+                f'  <w:left w:val="nil"/>'
+                f'  <w:bottom w:val="nil"/>'
+                f'  <w:right w:val="nil"/>'
+                f'  <w:insideH w:val="nil"/>'
+                f'  <w:insideV w:val="nil"/>'
+                f'</w:tblBorders>'
+            )
+            tblPr.append(new_bdr)
+
+            for r_idx in range(3):
+                for c_idx in range(2):
+                    cell = t.cell(r_idx, c_idx)
+                    tcPr = cell._tc.get_or_add_tcPr()
+                    tcShd = tcPr.find(qn('w:shd'))
+                    if tcShd is not None:
+                        tcPr.remove(tcShd)
+                    tcBdr = tcPr.find(qn('w:tcBorders'))
+                    if tcBdr is not None:
+                        tcPr.remove(tcBdr)
+
+                    top_val = 'single' if r_idx == 0 else 'nil'
+                    top_color = 'ad8934' if r_idx == 0 else 'auto'
+                    top_sz = '16' if r_idx == 0 else '0'
+
+                    bottom_val = 'single' if r_idx == 2 else 'nil'
+                    bottom_color = 'ad8934' if r_idx == 2 else 'auto'
+                    bottom_sz = '16' if r_idx == 2 else '0'
+
+                    new_tcBdr = parse_xml(
+                        f'<w:tcBorders {nsdecls("w")}>'
+                        f'  <w:top w:val="{top_val}" w:color="{top_color}" w:sz="{top_sz}" w:space="0" w:shadow="0" w:frame="0"/>'
+                        f'  <w:left w:val="nil"/>'
+                        f'  <w:bottom w:val="{bottom_val}" w:color="{bottom_color}" w:sz="{bottom_sz}" w:space="0" w:shadow="0" w:frame="0"/>'
+                        f'  <w:right w:val="nil"/>'
+                        f'</w:tcBorders>'
+                    )
+                    tcPr.append(new_tcBdr)
+
+                    # Ensure both columns are right-aligned (RTL)
+                    for p in cell.paragraphs:
+                        apply_p_dir_and_align(p, 'rtl', 'right')
+                        if c_idx == 0:
+                            # Value column: set font color to gold (#AD8934) and remove underline/blue
+                            for r in p.runs:
+                                r.font.color.rgb = RGBColor(0xAD, 0x89, 0x34)
+                                rPr = r._r.get_or_add_rPr()
+                                c_el = rPr.find(qn('w:color'))
+                                if c_el is not None:
+                                    c_el.set(qn('w:val'), 'ad8934')
+                                u_el = rPr.find(qn('w:u'))
+                                if u_el is not None:
+                                    rPr.remove(u_el)
+                                for child in list(rPr):
+                                    if 'textFill' in child.tag:
+                                        rPr.remove(child)
+                                w14_fill = parse_xml('<w14:textFill xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w14:solidFill><w14:srgbClr w14:val="AD8934"/></w14:solidFill></w14:textFill>')
+                                rPr.append(w14_fill)
+                                apply_run_rtl_and_lang(r, is_rtl=True)
+
+    # Style code paragraph: No. X and Date in deep blue (#002060), ENG.CSED in gold (#AD8934)
+    for p in doc.paragraphs[:5]:
+        p_text = p.text
+        if "ENG.CSED" in p_text or "No." in p_text or "{{CODE_NUMBER}}" in p_text:
+            if format_vice_dean_code_paragraph(p, p_text):
+                break
+
+
 def replace_placeholders(input_path: str, output_path: str, replacements: dict, remove_manager_sig: bool = False, tables_data: list = None, image_paths: list = None, table_data: list = None, image_sizes: list = None, **kwargs):
     """
     Opens a .docx file, replaces multiple occurrences of keys in `replacements` dict
@@ -351,13 +538,17 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         for s in doc.sections:
             if s.bottom_margin.pt < 155:
                 s.bottom_margin = Pt(160)
-            if s.footer_distance.pt < 100:
-                s.footer_distance = Pt(115)
+            s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
             if not pPr.xpath('w:pBdr/w:top'):
                 pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:top w:val="single" w:sz="12" w:space="6" w:color="AD8934"/></w:pBdr>')
                 pPr.append(pBdr)
+            # Indent from the left so the line does not cross into the decorative corner wave graphic on the bottom-left
+            if not pPr.xpath('w:ind'):
+                pPr.append(parse_xml(f'<w:ind {nsdecls("w")} w:left="3400"/>'))
+            else:
+                pPr.xpath('w:ind')[0].set(qn('w:left'), '3400')
 
     def _replace_in_p(paragraph):
         full_text = "".join(run.text for run in paragraph.runs)
@@ -813,7 +1004,6 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                                             if r_idx == 0:
                                                                 shd.set(qn('w:fill'), '343176')
                                                                 run.bold = True
-                                                                from docx.shared import RGBColor
                                                                 run.font.color.rgb = RGBColor(255, 255, 255)
                                                             else:
                                                                 shd.set(qn('w:fill'), 'F4F6F9')
@@ -920,7 +1110,6 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                 if heading_level == 1:
                                     run.bold = True
                                     run.font.size = Pt(16)
-                                    from docx.shared import RGBColor
                                     if run_info.get('color'):
                                         r, g, b = run_info['color']
                                         run.font.color.rgb = RGBColor(r, g, b)
@@ -929,7 +1118,6 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                 elif heading_level == 2:
                                     run.bold = True
                                     run.font.size = Pt(14)
-                                    from docx.shared import RGBColor
                                     if run_info.get('color'):
                                         r, g, b = run_info['color']
                                         run.font.color.rgb = RGBColor(r, g, b)
@@ -939,7 +1127,6 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                     run.bold = True
                                     run.font.size = Pt(12.5)
                                     if run_info.get('color'):
-                                        from docx.shared import RGBColor
                                         r, g, b = run_info['color']
                                         run.font.color.rgb = RGBColor(r, g, b)
                                 else:
@@ -950,7 +1137,6 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                     if run_info.get('underline'):
                                         run.underline = True
                                     if run_info.get('color'):
-                                        from docx.shared import RGBColor
                                         r, g, b = run_info['color']
                                         run.font.color.rgb = RGBColor(r, g, b)
 
@@ -968,18 +1154,29 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                     
                 else:
                     # Normal replacement without paragraph splitting
-                    paragraph.runs[0].text = full_text
+                    # Strip any accidental LTR marks \u202a from values
+                    clean_text = full_text.replace('\u202a', '').replace('\u202A', '')
+                    paragraph.runs[0].text = clean_text
                     for run in paragraph.runs[1:]:
                         run.text = ""
 
-                    has_ar = bool(re.search(r'[\u0600-\u06FF]', full_text))
-                    if has_ar:
+                    is_meta_field = any(m_ph in k for m_ph in ["{{SENDER_TOP}}", "{{STACK_HOLDER}}", "{{POSITION}}", "{{SUBJECT}}", "{{SEND_TO}}"])
+                    has_ar = bool(re.search(r'[\u0600-\u06FF]', clean_text))
+                    if is_meta_field or has_ar:
                         target_align = 'center' if paragraph.alignment == WD_PARAGRAPH_ALIGNMENT.CENTER else 'right'
                         apply_p_dir_and_align(paragraph, 'rtl', target_align)
                         for r in paragraph.runs:
                             apply_run_rtl_and_lang(r, is_rtl=True)
                     elif paragraph.alignment is not None:
                         apply_p_dir_and_align(paragraph, 'ltr', 'center' if paragraph.alignment == WD_PARAGRAPH_ALIGNMENT.CENTER else 'left')
+
+                    if is_vice_dean_doc:
+                        if "{{CODE_NUMBER}}" in k or "ENG.CSED" in clean_text or "No." in clean_text:
+                            if not format_vice_dean_code_paragraph(paragraph, clean_text):
+                                paragraph.runs[0].font.color.rgb = RGBColor(0xAD, 0x89, 0x34)
+                                paragraph.runs[0].bold = True
+                        elif is_meta_field:
+                            paragraph.runs[0].font.color.rgb = RGBColor(0xAD, 0x89, 0x34)
 
     def _replace_in_t(table):
         for row in table.rows:
@@ -1053,13 +1250,42 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             apply_p_dir_and_align(p, 'rtl', 'right')
                         for r in p.runs:
                             apply_run_rtl_and_lang(r, is_rtl=True)
-        # Do not forcibly inject w:bidiVisual onto existing template tables.
-        # Template tables were authored with Column 0 on the left and Column 1 (labels) on the right.
-        # Adding w:bidiVisual inverts that column order and switches the labels to the wrong side.
         tblPr = table._element.xpath('w:tblPr')
         if tblPr:
-            for bv in tblPr[0].xpath('w:bidiVisual'):
-                tblPr[0].remove(bv)
+            # Check table type:
+            # 1. Metadata/sender table (labels in the right column, e.g. الراسل, المرسل إليه, الموضوع)
+            is_metadata_table = False
+            for row in table.rows:
+                if len(row.cells) >= 2:
+                    c1_clean = re.sub(r'[\u0640\s\u200e\u200f\u202a-\u202e\:\：]', '', row.cells[-1].text)
+                    if any(lbl in c1_clean for lbl in ['الراسل', 'المرسل', 'الموضوع']):
+                        is_metadata_table = True
+                        break
+
+            # 2. Signature table (2 columns: col 0 is empty, col 1 contains signature title/name)
+            is_signature_table = False
+            if not is_metadata_table and len(table.columns) == 2:
+                for row in table.rows:
+                    if len(row.cells) == 2 and not row.cells[0].text.strip() and row.cells[1].text.strip():
+                        is_signature_table = True
+                        break
+
+            if is_metadata_table:
+                # Metadata table has Col 0 = value, Col 1 = label.
+                # It must NOT have bidiVisual so Col 1 (label) stays on the physical right, Col 0 (value) on the left.
+                for bv in tblPr[0].xpath('w:bidiVisual'):
+                    tblPr[0].remove(bv)
+                for r in table.rows:
+                    for c in r.cells:
+                        for p in c.paragraphs:
+                            apply_p_dir_and_align(p, 'rtl', 'right')
+                            for run in p.runs:
+                                apply_run_rtl_and_lang(run, is_rtl=True)
+            elif is_signature_table:
+                # Signature table has Col 0 = empty, Col 1 = signature text.
+                # In Word RTL layouts, w:bidiVisual is REQUIRED so Col 1 displays on the physical LEFT.
+                if not tblPr[0].xpath('w:bidiVisual'):
+                    tblPr[0].append(parse_xml(f'<w:bidiVisual {nsdecls("w")}/>'))
 
     for section in doc.sections:
         _replace_in_hf(section.header)
@@ -1068,6 +1294,9 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         _replace_in_hf(section.even_page_footer)
         _replace_in_hf(section.first_page_header)
         _replace_in_hf(section.first_page_footer)
+
+    if is_vice_dean_doc:
+        clean_vice_dean_tables(doc)
 
     doc.save(output_path)
 

@@ -891,7 +891,7 @@
       <a href="{{ url_for('settings_page') }}" class="{{ 'active' if request.endpoint == 'settings_page' else '' }}">
         <i class="bi bi-cpu"></i> AI Provider Settings
       </a>
-      {% if is_admin %}
+      {% if is_super_admin %}
       <a href="{{ url_for('users') }}" class="{{ 'active' if request.endpoint == 'users' else '' }}">
         <i class="bi bi-people"></i> User Management
       </a>

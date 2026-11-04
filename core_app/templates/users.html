@@ -40,35 +40,35 @@
             {{ user.email }}
           </td>
           <td>
+            {% set u_raw = (user.allowed_offices or 'ALL').strip().upper() %}
+            {% set is_all = (u_raw == 'ALL' or not u_raw) %}
             {% if user.role == 'admin' %}
-              <span class="badge" style="background:#e8f1fb;color:#1a5fa8;">Admin</span>
+              {% if is_all %}
+                <span class="badge" style="background:#e8f1fb;color:#1a5fa8;font-weight:700;"><i class="bi bi-shield-lock-fill me-1"></i>Super Admin</span>
+              {% else %}
+                <span class="badge" style="background:#e6f4ea;color:#137333;font-weight:700;"><i class="bi bi-shield-check me-1"></i>Dept Admin</span>
+              {% endif %}
             {% else %}
               <span class="badge" style="background:#f5e8fb;color:#7b2d8b;">User</span>
             {% endif %}
           </td>
           <td>
-            {% if user.role == 'admin' %}
-              <span class="badge" style="background:#e8f1fb;color:#1a5fa8;border:1px solid #c2dbf7;font-size:11px;">
-                <i class="bi bi-shield-check"></i> All Departments (Admin)
+            {% set u_offices = user.get_allowed_offices_list() %}
+            {% if is_all or u_offices | length == ALL_OFFICES | length %}
+              <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;">
+                <i class="bi bi-check-all"></i> All Departments
               </span>
             {% else %}
-              {% set u_offices = user.get_allowed_offices_list() %}
-              {% if (user.allowed_offices or 'ALL') == 'ALL' or u_offices | length == ALL_OFFICES | length %}
-                <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;">
-                  <i class="bi bi-check-all"></i> All Departments
-                </span>
-              {% else %}
-                <div class="d-flex gap-1 flex-wrap">
-                  {% for o_code in u_offices %}
-                    {% set o_info = ALL_OFFICES.get(o_code) %}
-                    {% if o_info %}
-                    <span class="badge" style="background:{{ o_info.color }};color:#fff;font-size:10.5px;padding:4px 7px;">
-                      <i class="bi {{ o_info.icon }}"></i> {{ o_code }}
-                    </span>
-                    {% endif %}
-                  {% endfor %}
-                </div>
-              {% endif %}
+              <div class="d-flex gap-1 flex-wrap">
+                {% for o_code in u_offices %}
+                  {% set o_info = ALL_OFFICES.get(o_code) %}
+                  {% if o_info %}
+                  <span class="badge" style="background:{{ o_info.color }};color:#fff;font-size:10.5px;padding:4px 7px;">
+                    <i class="bi {{ o_info.icon }}"></i> {{ o_code }}
+                  </span>
+                  {% endif %}
+                {% endfor %}
+              </div>
             {% endif %}
           </td>
           <td style="font-size:13px;color:#6b7a8f;white-space:nowrap;">
@@ -165,7 +165,7 @@
                 {% endfor %}
               </div>
             </div>
-            <small class="text-muted">Users will only be able to view, create, and track documents in their permitted departments.</small>
+            <small class="text-muted">Users and Admins will only have access and management rights over their selected departments.</small>
           </div>
         </div>
         <div class="modal-footer">
@@ -226,7 +226,7 @@
                 {% endfor %}
               </div>
             </div>
-            <small class="text-muted">Uncheck "All Departments" to limit this user to specific departments only.</small>
+            <small class="text-muted">Uncheck "All Departments" to limit this user or admin to specific departments only.</small>
           </div>
 
           <div class="form-check mt-4">
