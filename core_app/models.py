@@ -36,6 +36,10 @@ class User(db.Model):
         if raw == 'ALL' or not raw:
             return list(OFFICE_CONFIGS.keys())
         offices = [o.strip() for o in raw.split(',') if o.strip()]
+        if 'HUEED' in offices and 'CSED' not in offices:
+            offices.append('CSED')
+        if 'CSED' in offices and 'HUEED' not in offices:
+            offices.append('HUEED')
         valid = [o for o in offices if o in OFFICE_CONFIGS]
         return valid if valid else ['ESSIC']
 
@@ -43,6 +47,11 @@ class User(db.Model):
         """Check if user can access a specific office code."""
         if self.role == 'admin':
             return True
+        allowed = self.get_allowed_offices_list()
+        req = (office_code or '').upper()
+        if req == 'HUEED':
+            req = 'CSED'
+        return req in allowed or office_code in allowed
         if not office_code:
             return False
         return office_code.upper() in self.get_allowed_offices_list()

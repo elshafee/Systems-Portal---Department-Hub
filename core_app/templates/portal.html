@@ -346,24 +346,24 @@
   </div>
   {% endif %}
 
-  <!-- CARD 2: HUEED (Vice Dean) -->
-  {% if 'HUEED' in USER_ALLOWED_OFFICES %}
+  <!-- CARD 2: CSED (Vice Dean) -->
+  {% if 'CSED' in USER_ALLOWED_OFFICES or 'HUEED' in USER_ALLOWED_OFFICES %}
   <div class="col-12 col-lg-4">
     <div class="portal-card">
-      <div class="portal-card-stripe" style="background: {{ ALL_OFFICES.HUEED.color }};"></div>
+      <div class="portal-card-stripe" style="background: {{ ALL_OFFICES.CSED.color }};"></div>
       <div class="portal-card-header">
-        {% if SYSTEM_OFFICE_CODE == 'HUEED' %}
+        {% if SYSTEM_OFFICE_CODE in ['CSED', 'HUEED'] %}
         <span class="active-pulse-badge">
           <span class="pulse-dot"></span> النشط حالياً
         </span>
         {% endif %}
-        <div class="portal-icon-box" style="background: {{ ALL_OFFICES.HUEED.color }}15; color: {{ ALL_OFFICES.HUEED.color }};">
-          <i class="bi {{ ALL_OFFICES.HUEED.icon }}"></i>
+        <div class="portal-icon-box" style="background: {{ ALL_OFFICES.CSED.color }}15; color: {{ ALL_OFFICES.CSED.color }};">
+          <i class="bi {{ ALL_OFFICES.CSED.icon }}"></i>
         </div>
-        <div class="portal-card-title-ar">{{ ALL_OFFICES.HUEED.name }}</div>
-        <div class="portal-card-title-en">{{ ALL_OFFICES.HUEED.name_en }} &bull; <strong style="color:{{ ALL_OFFICES.HUEED.color }};">HUEED</strong></div>
+        <div class="portal-card-title-ar">{{ ALL_OFFICES.CSED.name }}</div>
+        <div class="portal-card-title-en">{{ ALL_OFFICES.CSED.name_en }} &bull; <strong style="color:{{ ALL_OFFICES.CSED.color }};">ENG.CSED</strong></div>
         <div style="font-size: 12px; color: #64748b;">
-          <i class="bi bi-person-badge text-success me-1"></i> وكيل كلية الهندسة لشئون التعليم والطلاب
+          <i class="bi bi-person-badge text-success me-1"></i> وكيل كلية الهندسة لشئون خدمة المجتمع وتنمية البيئة
         </div>
       </div>
 
@@ -374,26 +374,26 @@
 
         <div class="portal-card-stats">
           <div class="portal-stat-item">
-            <div class="portal-stat-num" style="color: {{ ALL_OFFICES.HUEED.color }};">{{ office_stats.HUEED.total_docs }}</div>
+            <div class="portal-stat-num" style="color: {{ ALL_OFFICES.CSED.color }};">{{ office_stats.CSED.total_docs if office_stats.CSED else office_stats.HUEED.total_docs }}</div>
             <div class="portal-stat-lbl">إجمالي الخطابات</div>
           </div>
           <div style="width: 1px; height: 32px; background: #e2e8f0;"></div>
           <div class="portal-stat-item">
-            <div class="portal-stat-num" style="color: #9a6c00;">{{ office_stats.HUEED.awaiting }}</div>
+            <div class="portal-stat-num" style="color: #9a6c00;">{{ office_stats.CSED.awaiting if office_stats.CSED else office_stats.HUEED.awaiting }}</div>
             <div class="portal-stat-lbl">بانتظار الرد</div>
           </div>
         </div>
       </div>
 
       <div class="portal-card-footer">
-        <a href="{{ url_for('switch_office', office_code='HUEED', next=url_for('index')) }}" class="btn-enter-system" style="background: {{ ALL_OFFICES.HUEED.color }};">
+        <a href="{{ url_for('switch_office', office_code='CSED', next=url_for('index')) }}" class="btn-enter-system" style="background: {{ ALL_OFFICES.CSED.color }};">
           <i class="bi bi-file-earmark-plus-fill"></i> دخول النظام وترقيم خطاب
         </a>
         <div class="d-flex gap-2">
-          <a href="{{ url_for('switch_office', office_code='HUEED', next=url_for('documents')) }}" class="btn-sub-link">
+          <a href="{{ url_for('switch_office', office_code='CSED', next=url_for('documents')) }}" class="btn-sub-link">
             <i class="bi bi-folder2-open text-success"></i> سجل الخطابات
           </a>
-          <a href="{{ url_for('switch_office', office_code='HUEED', next=url_for('tracking')) }}" class="btn-sub-link">
+          <a href="{{ url_for('switch_office', office_code='CSED', next=url_for('tracking')) }}" class="btn-sub-link">
             <i class="bi bi-send-check text-success"></i> المتابعة والتتبع
           </a>
         </div>

@@ -161,7 +161,7 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str):
 
     # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
     # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
-    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower()
+    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower() or "csed" in input_path.lower()
     if not is_vice_dean_doc:
         for t in doc.tables:
             for row in t.rows:
@@ -173,6 +173,13 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str):
         for s in doc.sections:
             if s.bottom_margin.pt < 155:
                 s.bottom_margin = Pt(160)
+            if s.footer_distance.pt < 100:
+                s.footer_distance = Pt(115)
+            footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
+            pPr = footer_p._element.get_or_add_pPr()
+            if not pPr.xpath('w:pBdr/w:top'):
+                pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:top w:val="single" w:sz="12" w:space="6" w:color="AD8934"/></w:pBdr>')
+                pPr.append(pBdr)
 
     # 1. Body paragraphs
     for paragraph in doc.paragraphs:
@@ -207,7 +214,7 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str):
 
     # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
     # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
-    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower()
+    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower() or "csed" in input_path.lower()
     if not is_vice_dean_doc:
         for t in doc.tables:
             for row in t.rows:
@@ -219,15 +226,24 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str):
         for s in doc.sections:
             if s.bottom_margin.pt < 155:
                 s.bottom_margin = Pt(160)
+            if s.footer_distance.pt < 100:
+                s.footer_distance = Pt(115)
+            footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
+            pPr = footer_p._element.get_or_add_pPr()
+            if not pPr.xpath('w:pBdr/w:top'):
+                pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:top w:val="single" w:sz="12" w:space="6" w:color="AD8934"/></w:pBdr>')
+                pPr.append(pBdr)
 
     def _clean_text(text: str):
         if not text:
             return text, False
         modified = False
         if re.search(r'\{\{\s*CODE_NUMBER\s*\}\}', text):
+            if full_code.startswith("No."):
+                text = re.sub(r'Code\s*No\.?\s*\{\{\s*CODE_NUMBER\s*\}\}', full_code, text, flags=re.IGNORECASE)
             text = re.sub(r'\{\{\s*CODE_NUMBER\s*\}\}', full_code, text)
             modified = True
-        for office_tag in ['ESSIC', 'HUEED', 'AIE']:
+        for office_tag in ['ESSIC', 'HUEED', 'CSED', 'AIE']:
             pattern = r'\{\{\s*' + re.escape(office_tag) + r'\s*\}\}'
             if re.search(pattern, text):
                 text = re.sub(pattern, '', text)
@@ -323,7 +339,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
 
     # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
     # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
-    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower()
+    is_vice_dean_doc = "vice_dean" in input_path.lower() or "hueed" in input_path.lower() or "csed" in input_path.lower()
     if not is_vice_dean_doc:
         for t in doc.tables:
             for row in t.rows:
@@ -335,6 +351,13 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         for s in doc.sections:
             if s.bottom_margin.pt < 155:
                 s.bottom_margin = Pt(160)
+            if s.footer_distance.pt < 100:
+                s.footer_distance = Pt(115)
+            footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
+            pPr = footer_p._element.get_or_add_pPr()
+            if not pPr.xpath('w:pBdr/w:top'):
+                pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:top w:val="single" w:sz="12" w:space="6" w:color="AD8934"/></w:pBdr>')
+                pPr.append(pBdr)
 
     def _replace_in_p(paragraph):
         full_text = "".join(run.text for run in paragraph.runs)
@@ -344,6 +367,8 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
 
         for k, v in replacements.items():
             if k in full_text:
+                if k == "{{CODE_NUMBER}}" and str(v).startswith("No."):
+                    full_text = re.sub(r'Code\s*No\.?\s*\{\{\s*CODE_NUMBER\s*\}\}', str(v), full_text, flags=re.IGNORECASE)
                 if k == "{{BODY_TEXT}}":
                     modified_body = True
                     # Clean up Body Text and remove any wrapping directional marks
@@ -1028,11 +1053,13 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                             apply_p_dir_and_align(p, 'rtl', 'right')
                         for r in p.runs:
                             apply_run_rtl_and_lang(r, is_rtl=True)
-        if has_table_ar:
-            tblPr = table._element.xpath('w:tblPr')
-            if tblPr and not table._element.xpath('w:tblPr/w:bidiVisual'):
-                bidiVisual = OxmlElement('w:bidiVisual')
-                tblPr[0].append(bidiVisual)
+        # Do not forcibly inject w:bidiVisual onto existing template tables.
+        # Template tables were authored with Column 0 on the left and Column 1 (labels) on the right.
+        # Adding w:bidiVisual inverts that column order and switches the labels to the wrong side.
+        tblPr = table._element.xpath('w:tblPr')
+        if tblPr:
+            for bv in tblPr[0].xpath('w:bidiVisual'):
+                tblPr[0].remove(bv)
 
     for section in doc.sections:
         _replace_in_hf(section.header)

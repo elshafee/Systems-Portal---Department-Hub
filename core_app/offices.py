@@ -26,10 +26,10 @@ OFFICE_CONFIGS = {
         'color': '#2e8de4',
         'icon': 'bi-building-fill-gear'
     },
-    'HUEED': {
-        'code': 'HUEED',
+    'CSED': {
+        'code': 'CSED',
         'name': 'وكيل كلية الهندسة',
-        'name_en': 'Vice Dean (Engineering)',
+        'name_en': 'Vice Dean (ENG.CSED)',
         'org_name': 'وكيل كلية الهندسة',
         'org_example': 'وكيل كلية الهندسة',
         'manager_title': 'وكيل كلية الهندسة لخدمة المجتمع و شئون البيئة',
@@ -40,7 +40,7 @@ OFFICE_CONFIGS = {
         'preview_footer': 'assets/blank.png',
         'preview_pt': '28%',
         'preview_pb': '19%',
-        'known_abbrs': 'Faculty of Engineering Vice Dean,HUE,IT,HR',
+        'known_abbrs': 'Faculty of Engineering Vice Dean,HUE,IT,HR,CSED,ENG.CSED,HUEED',
         'onedrive_folder': '/personal/aelshafee_horus_edu_eg/Documents/Faculty_of_Engineering_Docs',
         'color': '#198754',
         'icon': 'bi-bank2'
@@ -66,10 +66,17 @@ OFFICE_CONFIGS = {
     }
 }
 
+# Alias HUEED to CSED for backward compatibility with existing records & sessions
+OFFICE_CONFIGS['HUEED'] = OFFICE_CONFIGS['CSED']
+
 DEFAULT_OFFICE = os.environ.get("SYSTEM_OFFICE_CODE", "ESSIC")
+if DEFAULT_OFFICE == 'HUEED':
+    DEFAULT_OFFICE = 'CSED'
 
 def get_current_office() -> dict:
     code = session.get('active_office', DEFAULT_OFFICE).upper()
+    if code == 'HUEED':
+        code = 'CSED'
     if code not in OFFICE_CONFIGS:
         code = DEFAULT_OFFICE if DEFAULT_OFFICE in OFFICE_CONFIGS else 'ESSIC'
     return OFFICE_CONFIGS[code]
@@ -77,10 +84,15 @@ def get_current_office() -> dict:
 def get_office_by_code(code: str) -> dict:
     if not code:
         return OFFICE_CONFIGS.get('ESSIC')
-    return OFFICE_CONFIGS.get(code.upper(), OFFICE_CONFIGS.get('ESSIC'))
+    code_upper = code.upper()
+    if code_upper == 'HUEED':
+        code_upper = 'CSED'
+    return OFFICE_CONFIGS.get(code_upper, OFFICE_CONFIGS.get('ESSIC'))
 
 def set_current_office(code: str) -> bool:
     code = code.upper()
+    if code == 'HUEED':
+        code = 'CSED'
     if code in OFFICE_CONFIGS:
         session['active_office'] = code
         return True

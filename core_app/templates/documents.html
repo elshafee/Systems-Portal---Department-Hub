@@ -136,7 +136,7 @@
               Code No {{ doc.full_code }}
             </span>
             {% if doc.office_code %}
-            <span class="badge ms-1" style="font-size:10px; font-weight:700; background:{% if doc.office_code == 'ESSIC' %}#2e8de4{% elif doc.office_code == 'HUEED' %}#198754{% elif doc.office_code == 'AIE' %}#0dcaf0{% else %}#64748b{% endif %}; color:#fff;">{{ doc.office_code }}</span>
+            <span class="badge ms-1" style="font-size:10px; font-weight:700; background:{% if doc.office_code == 'ESSIC' %}#2e8de4{% elif doc.office_code in ['CSED', 'HUEED'] %}#198754{% elif doc.office_code == 'AIE' %}#0dcaf0{% else %}#64748b{% endif %}; color:#fff;">{{ 'ENG.CSED' if doc.office_code in ['CSED', 'HUEED'] else doc.office_code }}</span>
             {% endif %}
           </td>
           <td style="font-size:13px;color:#6b7a8f;">

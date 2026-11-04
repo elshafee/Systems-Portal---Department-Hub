@@ -528,7 +528,7 @@
             </div>
             <div class="d-flex align-items-center gap-1 flex-wrap">
               {% if doc.office_code %}
-              <span class="badge" style="font-size: 9.5px; font-weight: 700; padding: 2px 6px; background:{% if doc.office_code == 'ESSIC' %}#2e8de4{% elif doc.office_code == 'HUEED' %}#198754{% elif doc.office_code == 'AIE' %}#0dcaf0{% else %}#64748b{% endif %}; color:#fff;">{{ doc.office_code }}</span>
+              <span class="badge" style="font-size: 9.5px; font-weight: 700; padding: 2px 6px; background:{% if doc.office_code == 'ESSIC' %}#2e8de4{% elif doc.office_code in ['CSED', 'HUEED'] %}#198754{% elif doc.office_code == 'AIE' %}#0dcaf0{% else %}#64748b{% endif %}; color:#fff;">{{ 'ENG.CSED' if doc.office_code in ['CSED', 'HUEED'] else doc.office_code }}</span>
               {% endif %}
               <span style="font-size: 11px; color: #8b89a6;">
                 {{ doc.created_at.strftime('%d %b %Y') }}

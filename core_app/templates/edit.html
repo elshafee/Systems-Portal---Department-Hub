@@ -20,8 +20,8 @@
           </div>
         </div>
         <div>
-          <span class="badge" style="font-size:12px; font-weight:700; background:{% if doc.office_code == 'ESSIC' %}#2e8de4{% elif doc.office_code == 'HUEED' %}#198754{% elif doc.office_code == 'AIE' %}#0dcaf0{% else %}#64748b{% endif %}; color:#fff;">
-            {{ doc.office_code or SYSTEM_OFFICE_CODE }}
+          <span class="badge" style="font-size:12px; font-weight:700; background:{% if (doc.office_code or SYSTEM_OFFICE_CODE) == 'ESSIC' %}#2e8de4{% elif (doc.office_code or SYSTEM_OFFICE_CODE) in ['CSED', 'HUEED'] %}#198754{% elif (doc.office_code or SYSTEM_OFFICE_CODE) == 'AIE' %}#0dcaf0{% else %}#64748b{% endif %}; color:#fff;">
+            {{ 'ENG.CSED' if (doc.office_code or SYSTEM_OFFICE_CODE) in ['CSED', 'HUEED'] else (doc.office_code or SYSTEM_OFFICE_CODE) }}
           </span>
           {% if doc.status == 'approved' %}
           <span class="badge ms-1" style="background:#e8f8f1;color:#1a7a4a;border:1px solid #c3e6d6;">Approved</span>

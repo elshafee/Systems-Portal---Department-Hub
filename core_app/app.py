@@ -635,7 +635,7 @@ def index():
                     import re
                     def remove_office_code(text):
                         if not text: return ""
-                        for code in ['ESSIC', 'HUEED', 'AIE']:
+                        for code in ['ESSIC', 'HUEED', 'CSED', 'AIE', 'ENG.CSED']:
                             text = re.sub(rf'\(\s*{code}\s*\)', '', text, flags=re.IGNORECASE)
                             text = re.sub(rf'{code}', '', text, flags=re.IGNORECASE)
                         return text.strip()
@@ -716,6 +716,8 @@ def index():
                         "{{SENDER_TOP}}": sender_top,
                         "{{ESSIC}}": "",
                         "{{HUEED}}": "",
+                "{{CSED}}": "",
+                        "{{CSED}}": "",
                         "{{AIE}}": "",
                     }, remove_manager_sig=remove_manager, tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes)
 
@@ -1303,7 +1305,7 @@ def preview_document():
             import re
             def remove_office_code(text):
                 if not text: return ""
-                for code in ['ESSIC', 'HUEED', 'AIE']:
+                for code in ['ESSIC', 'HUEED', 'CSED', 'AIE', 'ENG.CSED']:
                     text = re.sub(rf'\(\s*{code}\s*\)', '', text, flags=re.IGNORECASE)
                     text = re.sub(rf'{code}', '', text, flags=re.IGNORECASE)
                 return text.strip()
@@ -1379,6 +1381,7 @@ def preview_document():
                 "{{SENDER_TOP}}": sender_top,
                 "{{ESSIC}}": "",
                 "{{HUEED}}": "",
+                "{{CSED}}": "",
                 "{{AIE}}": "",
             }, remove_manager_sig=(is_internal and not manager_is_sender), tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes)
 
@@ -1599,7 +1602,7 @@ def edit(doc_id):
 
                 def remove_office_code(text):
                     if not text: return ""
-                    for code in ['ESSIC', 'HUEED', 'AIE']:
+                    for code in ['ESSIC', 'HUEED', 'CSED', 'AIE', 'ENG.CSED']:
                         text = re.sub(rf'\(\s*{code}\s*\)', '', text, flags=re.IGNORECASE)
                         text = re.sub(rf'{code}', '', text, flags=re.IGNORECASE)
                     return text.strip()
@@ -1636,6 +1639,7 @@ def edit(doc_id):
                     "{{SENDER_TOP}}": sender_top,
                     "{{ESSIC}}": "",
                     "{{HUEED}}": "",
+                "{{CSED}}": "",
                     "{{AIE}}": "",
                 }, remove_manager_sig=(doc.is_internal and not doc.manager_is_sender))
             else:
@@ -2086,7 +2090,7 @@ def ai_finalize():
     import re
     def remove_office_code(text):
         if not text: return ""
-        for c in ['ESSIC', 'HUEED', 'AIE']:
+        for c in ['ESSIC', 'HUEED', 'CSED', 'AIE', 'ENG.CSED']:
             text = re.sub(rf'\(\s*{c}\s*\)', '', text, flags=re.IGNORECASE)
             text = re.sub(rf'{c}', '', text, flags=re.IGNORECASE)
         return text.strip()
