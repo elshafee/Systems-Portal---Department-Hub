@@ -410,9 +410,9 @@ def enhance_signature_table(table):
     1. Ensures w:bidiVisual is applied so the signature column (col 1) is physically on the LEFT in RTL documents.
     2. Applies w:cantSplit to table row(s) to prevent breaking across page boundaries.
     3. Adds cell top breathing space (w:tcMar top="300" / 15 pt).
-    4. Sets top paragraph space_before="240" (12 pt) and w:keepNext so it stays anchored.
-    5. Sets generous space_before="1600" (80 pt / ~3.0 cm) on the name paragraph (last paragraph)
-       specifically to provide ample space for physical signature and official stamp.
+    4. Sets generous space_before="1440" (72 pt / ~2.8-3.0 cm) ON TOP of the signature block (above job title)
+       specifically to provide ample space for physical pen signature and official stamp.
+    5. Keeps the person's name directly attached below the job title with no gap (space_before="0").
     6. Any intermediate title paragraphs get clean spacing and w:keepNext.
     """
     tblPr = table._element.xpath('w:tblPr')
@@ -453,28 +453,20 @@ def enhance_signature_table(table):
                 sp = pPr.find(qn('w:spacing'))
                 if sp is not None:
                     pPr.remove(sp)
-                pPr.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="1600" w:after="40" w:line="276" w:lineRule="auto"/>'))
+                pPr.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="1440" w:after="40" w:line="276" w:lineRule="auto"/>'))
             elif len(paragraphs) >= 2:
-                # 1. Top paragraph: add space_before on top of the signature block
+                # 1. Top paragraph (Job Title): generous space ON TOP of the signature block for physical pen signature & official stamp
                 p_top = paragraphs[0]
                 pPr_top = p_top._p.get_or_add_pPr()
                 sp_top = pPr_top.find(qn('w:spacing'))
                 if sp_top is not None:
                     pPr_top.remove(sp_top)
-                pPr_top.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="240" w:after="40" w:line="276" w:lineRule="auto"/>'))
+                # 1440 dxa = 72 pt = ~2.8-3.0 cm ample space on top of the signature block for signing and stamping
+                pPr_top.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="1440" w:after="40" w:line="276" w:lineRule="auto"/>'))
                 if not pPr_top.xpath('w:keepNext'):
                     pPr_top.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
 
-                # 2. Last paragraph (Name): add generous space_before on top of the name for physical signature and stamp
-                p_name = paragraphs[-1]
-                pPr_name = p_name._p.get_or_add_pPr()
-                sp_name = pPr_name.find(qn('w:spacing'))
-                if sp_name is not None:
-                    pPr_name.remove(sp_name)
-                # 1600 dxa = 80 pt = ~3.0 cm ample space for physical pen signature and official stamp
-                pPr_name.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="1600" w:after="40" w:line="276" w:lineRule="auto"/>'))
-
-                # 3. Middle paragraphs (if multiple titles like in ESSIC):
+                # 2. Middle paragraphs (if multiple titles like in ESSIC): directly attached below
                 for p_mid in paragraphs[1:-1]:
                     pPr_mid = p_mid._p.get_or_add_pPr()
                     sp_mid = pPr_mid.find(qn('w:spacing'))
@@ -483,6 +475,14 @@ def enhance_signature_table(table):
                     pPr_mid.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>'))
                     if not pPr_mid.xpath('w:keepNext'):
                         pPr_mid.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
+
+                # 3. Last paragraph (Person Name): directly attached right under the title (no gap, tightly bonded)
+                p_name = paragraphs[-1]
+                pPr_name = p_name._p.get_or_add_pPr()
+                sp_name = pPr_name.find(qn('w:spacing'))
+                if sp_name is not None:
+                    pPr_name.remove(sp_name)
+                pPr_name.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>'))
 
 
 def clean_vice_dean_tables(doc, table_values_align: str = 'left'):
