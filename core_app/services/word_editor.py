@@ -406,6 +406,87 @@ def format_vice_dean_code_paragraph(paragraph, full_text=None):
     return True
 
 
+def enhance_signature_table(table):
+    """
+    Enhances the signature table layout:
+    1. Ensures w:bidiVisual is applied so the signature column (col 1) is physically on the LEFT in RTL documents.
+    2. Applies w:cantSplit to table row(s) to prevent breaking across page boundaries.
+    3. Adds cell top breathing space (w:tcMar top="300" / 15 pt).
+    4. Sets top paragraph space_before="360" (18 pt) and w:keepNext so it stays anchored.
+    5. Sets generous space_before="960" (48 pt / ~1.7 cm) on the name paragraph (last paragraph)
+       specifically to provide ample space for physical signature and stamp.
+    6. Any intermediate title paragraphs get clean spacing and w:keepNext.
+    """
+    tblPr = table._element.xpath('w:tblPr')
+    if tblPr and not tblPr[0].xpath('w:bidiVisual'):
+        tblPr[0].append(parse_xml(f'<w:bidiVisual {nsdecls("w")}/>'))
+
+    for r in table.rows:
+        trPr = r._tr.get_or_add_trPr()
+        if not trPr.xpath('w:cantSplit'):
+            trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
+
+        # In the signature cell (col 1 if 2 columns, or cell with text):
+        sig_cell = None
+        if len(r.cells) >= 2 and r.cells[1].text.strip():
+            sig_cell = r.cells[1]
+        elif len(r.cells) == 1 and r.cells[0].text.strip():
+            sig_cell = r.cells[0]
+
+        if sig_cell is not None:
+            tcPr = sig_cell._tc.get_or_add_tcPr()
+
+            # Add top margin to cell for breathing space
+            tcMar = tcPr.find(qn('w:tcMar'))
+            if tcMar is None:
+                tcMar = parse_xml(f'<w:tcMar {nsdecls("w")}><w:top w:w="160" w:type="dxa"/><w:bottom w:w="160" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>')
+                tcPr.append(tcMar)
+            else:
+                top_el = tcMar.find(qn('w:top'))
+                if top_el is not None:
+                    top_el.set(qn('w:w'), '160')
+                else:
+                    tcMar.append(parse_xml(f'<w:top {nsdecls("w")} w:w="160" w:type="dxa"/>'))
+
+            paragraphs = sig_cell.paragraphs
+            if len(paragraphs) == 1:
+                p = paragraphs[0]
+                pPr = p._p.get_or_add_pPr()
+                sp = pPr.find(qn('w:spacing'))
+                if sp is not None:
+                    pPr.remove(sp)
+                pPr.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="720" w:after="40" w:line="276" w:lineRule="auto"/>'))
+            elif len(paragraphs) >= 2:
+                # 1. Top paragraph: add space_before on top of the signature block
+                p_top = paragraphs[0]
+                pPr_top = p_top._p.get_or_add_pPr()
+                sp_top = pPr_top.find(qn('w:spacing'))
+                if sp_top is not None:
+                    pPr_top.remove(sp_top)
+                pPr_top.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="160" w:after="40" w:line="276" w:lineRule="auto"/>'))
+                if not pPr_top.xpath('w:keepNext'):
+                    pPr_top.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
+
+                # 2. Last paragraph (Name): add generous space_before on top of the name for signature
+                p_name = paragraphs[-1]
+                pPr_name = p_name._p.get_or_add_pPr()
+                sp_name = pPr_name.find(qn('w:spacing'))
+                if sp_name is not None:
+                    pPr_name.remove(sp_name)
+                # 720 dxa = 36 pt = ~1.3-1.5 cm space for physical signature and stamp
+                pPr_name.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="720" w:after="40" w:line="276" w:lineRule="auto"/>'))
+
+                # 3. Middle paragraphs (if multiple titles like in ESSIC):
+                for p_mid in paragraphs[1:-1]:
+                    pPr_mid = p_mid._p.get_or_add_pPr()
+                    sp_mid = pPr_mid.find(qn('w:spacing'))
+                    if sp_mid is not None:
+                        pPr_mid.remove(sp_mid)
+                    pPr_mid.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>'))
+                    if not pPr_mid.xpath('w:keepNext'):
+                        pPr_mid.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
+
+
 def clean_vice_dean_tables(doc, table_values_align: str = 'left'):
     """
     Cleans up Vice Dean document tables to ensure:
@@ -454,6 +535,13 @@ def clean_vice_dean_tables(doc, table_values_align: str = 'left'):
                     tcBdr = tcPr.find(qn('w:tcBorders'))
                     if tcBdr is not None:
                         tcPr.remove(tcBdr)
+
+            # If signature table (col 0 empty, col 1 has signature text), apply signature layout enhancements
+            if len(t.columns) == 2:
+                for row in t.rows:
+                    if len(row.cells) == 2 and not row.cells[0].text.strip() and row.cells[1].text.strip():
+                        enhance_signature_table(t)
+                        break
 
         elif is_metadata_tbl:
             # Table 1: Metadata table (الراسل, المرسل إليه, الموضوع)
@@ -561,8 +649,9 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
 
     doc = Document(input_path)
 
-    # Option to remove metadata header table completely
+    # Option to remove metadata header table and "عناية" greeting completely
     if remove_header_table:
+        # 1. Remove metadata header table
         tables_to_remove = []
         for t in doc.tables:
             if len(t.rows) == 3 and len(t.columns) == 2:
@@ -573,6 +662,17 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
             parent = t._element.getparent()
             if parent is not None:
                 parent.remove(t._element)
+
+        # 2. Remove "عناية" paragraphs (عناية السيد / STACK_HOLDER and POSITION)
+        paras_to_remove = []
+        for p in doc.paragraphs[:10]:
+            p_text = p.text
+            if 'STACK_HOLDER' in p_text or 'عناية' in p_text or 'POSITION' in p_text:
+                paras_to_remove.append(p)
+        for p in paras_to_remove:
+            parent = p._element.getparent()
+            if parent is not None:
+                parent.remove(p._element)
 
     # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
     # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
@@ -1350,8 +1450,46 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
             elif is_signature_table:
                 # Signature table has Col 0 = empty, Col 1 = signature text.
                 # In Word RTL layouts, w:bidiVisual is REQUIRED so Col 1 displays on the physical LEFT.
-                if not tblPr[0].xpath('w:bidiVisual'):
-                    tblPr[0].append(parse_xml(f'<w:bidiVisual {nsdecls("w")}/>'))
+                enhance_signature_table(table)
+
+    # Ensure closing salutation stays anchored with signature block and clean up empty spacing paragraphs
+    salutation_keywords = ['وتفضلوا بقبول', 'فائق الاحترام', 'مع وافر الاحترام', 'شاكرين لسيادتكم', 'شاكرين حسن تعاونكم']
+    doc_paras = list(doc.paragraphs)
+    for idx, p in enumerate(doc_paras):
+        txt = p.text.strip()
+        if any(s in txt for s in salutation_keywords):
+            pPr = p._p.get_or_add_pPr()
+            if not pPr.xpath('w:keepNext'):
+                pPr.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
+            sp = pPr.find(qn('w:spacing'))
+            if sp is not None:
+                pPr.remove(sp)
+            pPr.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="120" w:after="80" w:line="240" w:lineRule="auto"/>'))
+
+            # Remove empty paragraph immediately preceding closing salutation if any
+            if idx > 0 and not doc_paras[idx - 1].text.strip():
+                p_prev = doc_paras[idx - 1]
+                parent = p_prev._element.getparent()
+                if parent is not None:
+                    parent.remove(p_prev._element)
+            break
+
+    # If manager signature is active (no employee SENDER text), clean up trailing empty paragraphs between salutation and signature table
+    if not replacements.get('{{SENDER}}'):
+        empty_paras_to_remove = []
+        found_salutation = False
+        for p in doc.paragraphs:
+            txt = p.text.strip()
+            if any(s in txt for s in salutation_keywords):
+                found_salutation = True
+                continue
+            if found_salutation:
+                if not txt:
+                    empty_paras_to_remove.append(p)
+                else:
+                    break
+        for ep in empty_paras_to_remove:
+            ep._element.getparent().remove(ep._element)
 
     for section in doc.sections:
         _replace_in_hf(section.header)
