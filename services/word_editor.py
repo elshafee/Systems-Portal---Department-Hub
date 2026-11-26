@@ -179,8 +179,7 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str, tab
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            if s.bottom_margin.pt < 155:
-                s.bottom_margin = Pt(160)
+            s.bottom_margin = Pt(125)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -239,8 +238,7 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            if s.bottom_margin.pt < 155:
-                s.bottom_margin = Pt(160)
+            s.bottom_margin = Pt(125)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -663,13 +661,29 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
             if parent is not None:
                 parent.remove(t._element)
 
-        # 2. Remove "عناية" paragraphs (عناية السيد / STACK_HOLDER and POSITION)
+        # 2. Remove "عناية" paragraphs (عناية السيد / STACK_HOLDER and POSITION) and fixed preamble in free-form mode
         paras_to_remove = []
         for p in doc.paragraphs[:10]:
             p_text = p.text
-            if 'STACK_HOLDER' in p_text or 'عناية' in p_text or 'POSITION' in p_text:
+            if 'STACK_HOLDER' in p_text or 'عناية' in p_text or 'POSITION' in p_text or 'يسعدنا أن نتقدم إلى سيادتكم بخالص التحية والتقدير' in p_text:
                 paras_to_remove.append(p)
         for p in paras_to_remove:
+            parent = p._element.getparent()
+            if parent is not None:
+                parent.remove(p._element)
+
+    # Avoid duplicate greeting if body text already starts with greeting
+    body_text_input = replacements.get('{{BODY_TEXT}}', '')
+    if any(k in body_text_input[:100] for k in ['يسعدنا أن نتقدم', 'يسرنا أن نتقدم', 'يطيب لنا']):
+        for p in doc.paragraphs[:10]:
+            if 'يسعدنا أن نتقدم إلى سيادتكم بخالص التحية والتقدير' in p.text:
+                parent = p._element.getparent()
+                if parent is not None:
+                    parent.remove(p._element)
+
+    # Clean leading empty paragraphs before/after code number in top header
+    for p in list(doc.paragraphs)[:3]:
+        if not p.text.strip():
             parent = p._element.getparent()
             if parent is not None:
                 parent.remove(p._element)
@@ -686,8 +700,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            if s.bottom_margin.pt < 155:
-                s.bottom_margin = Pt(160)
+            s.bottom_margin = Pt(125)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
