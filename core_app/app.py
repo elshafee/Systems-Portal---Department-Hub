@@ -701,7 +701,7 @@ def index():
                     # If external OR manager is sender -> sender_value stays empty (manager signature kept)
                     # Only if internal AND NOT manager -> employee signature used
                     if is_internal and not manager_is_sender and sender:
-                        sender_value = f"\u202Bمقدمه لسيادتكم\n\n\n\n{sender}\u202C"
+                        sender_value = f"\u202Bمقدمه لسيادتكم\n\n\n\n\n{sender}\u202C"
 
                     # Parse tables_data
                     import json
@@ -1377,7 +1377,7 @@ def preview_document():
             sender_value = ""
             sender_top = f"{bidi_prefix}{sender}{bidi_suffix}" if sender else f"{bidi_prefix}{default_sender}{bidi_suffix}"
             if is_internal and not manager_is_sender and sender:
-                sender_value = f"\u202Bمقدمه لسيادتكم\n\n\n\n{sender}\u202C"
+                sender_value = f"\u202Bمقدمه لسيادتكم\n\n\n\n\n{sender}\u202C"
 
             # Parse tables_data for preview
             import json
@@ -1681,7 +1681,7 @@ def edit(doc_id):
                 sender_value = ""
                 sender_top = f"{bidi_prefix}{doc.sender}{bidi_suffix}" if doc.sender else f"{bidi_prefix}{default_sender}{bidi_suffix}"
                 if doc.is_internal and not doc.manager_is_sender and doc.sender:
-                    sender_value = f"\u202Bمقدمه لسيادتكم\n\n\n\n{doc.sender}\u202C"
+                    sender_value = f"\u202Bمقدمه لسيادتكم\n\n\n\n\n{doc.sender}\u202C"
 
                 if doc.doc_type in ["direct", "letter", "request"]:
                     tmpl_path = os.path.join(BASE_DIR, fallback_template)
