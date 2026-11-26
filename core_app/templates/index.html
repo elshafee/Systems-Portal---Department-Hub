@@ -327,6 +327,33 @@
                                 </label>
                             </div>
 
+                            <div class="form-check mb-2" style="text-align: right; padding-right: 0;">
+                                <input class="form-check-input float-end ms-2" type="checkbox" name="remove_header_table"
+                                    id="remove_header_table" value="1">
+                                <label class="form-check-label" for="remove_header_table"
+                                    style="font-weight:600;color:#0f2744; margin-right: 1.5rem;">
+                                    <i class="bi bi-table text-primary me-1"></i> إزالة جدول الترويسة واستخدام القالب بدونه (بدون الراسل / المرسل إليه / الموضوع)
+                                </label>
+                            </div>
+
+                            <div class="mb-3 p-2 bg-light rounded border" id="table-align-group" style="text-align: right; border-color:#e2e8f0 !important;">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <label class="form-label mb-0" style="font-weight:600;color:#0f2744;font-size:12px;">
+                                        <i class="bi bi-text-left me-1 text-primary"></i> محاذاة قيم جدول الترويسة:
+                                    </label>
+                                    <div class="d-flex gap-3 align-items-center">
+                                        <div class="form-check form-check-inline m-0">
+                                            <input class="form-check-input" type="radio" name="table_values_align" id="tbl_align_left" value="left" checked>
+                                            <label class="form-check-label ms-1 small" for="tbl_align_left" style="font-weight:600;">يسار (Left / LTR)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline m-0">
+                                            <input class="form-check-input" type="radio" name="table_values_align" id="tbl_align_right" value="right">
+                                            <label class="form-check-label ms-1 small" for="tbl_align_right" style="font-weight:600;">يمين (Right / RTL)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-group mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="form-label mb-0" style="font-weight:600;color:#0f2744;">نص الخطاب (Body)</label>
@@ -584,10 +611,12 @@
                     <div class="a4-paper" id="a4Preview">
                         <!-- Header is baked into the background image -->
                         <div class="a4-meta" style="direction: rtl; text-align: right;">
-                            <p><strong>المرسل:</strong> <span id="preview-sender"></span></p>
-                            <p><strong>المرسل إليه:</strong> <span id="preview-recipient"></span></p>
-                            <p><strong>الموضوع:</strong> <span id="preview-subject"></span></p>
-                            <br>
+                            <div id="preview-meta-table">
+                                <p><strong>المرسل:</strong> <span id="preview-sender"></span></p>
+                                <p><strong>المرسل إليه:</strong> <span id="preview-recipient"></span></p>
+                                <p><strong>الموضوع:</strong> <span id="preview-subject"></span></p>
+                                <br>
+                            </div>
                             <p style="text-align: center;"><strong>عناية السيد / <span
                                         id="preview-holder-name"></span></strong></p>
                             <p style="text-align: center;"><strong><span id="preview-position"></span></strong></p>
@@ -1954,6 +1983,23 @@
         if (document.getElementById('preview-holder-name')) document.getElementById('preview-holder-name').textContent = form.querySelector('[name="holder_name"]').value;
         if (document.getElementById('preview-position')) document.getElementById('preview-position').textContent = form.querySelector('[name="position"]').value;
 
+        // Sync header table visibility and alignment in preview
+        const removeTblCheck = form.querySelector('[name="remove_header_table"]');
+        const metaTblEl = document.getElementById('preview-meta-table');
+        if (metaTblEl) {
+            metaTblEl.style.display = (removeTblCheck && removeTblCheck.checked) ? 'none' : 'block';
+        }
+
+        const alignRadio = form.querySelector('[name="table_values_align"]:checked');
+        const alignVal = alignRadio ? alignRadio.value : 'left';
+        ['preview-sender', 'preview-recipient', 'preview-subject'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.style.textAlign = alignVal === 'right' ? 'right' : 'left';
+                el.style.direction = alignVal === 'right' ? 'rtl' : 'ltr';
+            }
+        });
+
         const editor = document.getElementById('richBodyEditor');
         let bodyHtml = editor ? editor.innerHTML : (form.querySelector('[name="full_body"]')?.value || '');
         if (!bodyHtml.trim()) {
@@ -2014,6 +2060,18 @@
     if (dForm) {
         dForm.addEventListener('input', syncLivePreview);
         dForm.addEventListener('change', syncLivePreview);
+
+        const rmTableChk = dForm.querySelector('[name="remove_header_table"]');
+        if (rmTableChk) {
+            rmTableChk.addEventListener('change', function() {
+                const grp = document.getElementById('table-align-group');
+                if (grp) {
+                    grp.style.opacity = this.checked ? '0.4' : '1';
+                    grp.style.pointerEvents = this.checked ? 'none' : 'auto';
+                }
+                syncLivePreview();
+            });
+        }
     }
     updateImageLabels();
     updateImageSizes();

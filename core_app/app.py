@@ -686,9 +686,17 @@ def index():
                     sender = remove_office_code(sender)
                     default_sender = remove_office_code(default_sender)
 
+                    remove_header_table = request.form.get("remove_header_table") == "1"
+                    table_values_align = request.form.get("table_values_align", "left").strip().lower()
+                    if table_values_align not in ['left', 'right', 'auto']:
+                        table_values_align = 'left'
+
+                    bidi_prefix = "\u202B" if table_values_align == 'right' else ""
+                    bidi_suffix = "\u202C" if table_values_align == 'right' else ""
+
                     # Determine sender value for template
                     sender_value = ""
-                    sender_top = f"\u202B{sender}\u202C" if sender else f"\u202B{default_sender}\u202C"
+                    sender_top = f"{bidi_prefix}{sender}{bidi_suffix}" if sender else f"{bidi_prefix}{default_sender}{bidi_suffix}"
                     
                     # If external OR manager is sender -> sender_value stays empty (manager signature kept)
                     # Only if internal AND NOT manager -> employee signature used
@@ -742,19 +750,19 @@ def index():
                     remove_manager = (is_internal and not manager_is_sender)
                     replace_placeholders(upload_path, generated_path, {
                         "{{CODE_NUMBER}}": full_code,
-                        "{{SEND_TO}}": ("\u202B" + normalize_recipient(recipient) + "\u202C") if recipient else "",
-                        "{{SUBJECT}}": "\u202B" + subject + "\u202C",
-                        "{{STACK_HOLDER}}": "\u202B" + holder_name + "\u202C",
-                        "{{POSITION}}": "\u202B" + position + "\u202C",
-                        "{{BODY_TEXT}}": "\u202B" + full_body + "\u202C",
+                        "{{SEND_TO}}": (bidi_prefix + normalize_recipient(recipient) + bidi_suffix) if recipient else "",
+                        "{{SUBJECT}}": bidi_prefix + subject + bidi_suffix,
+                        "{{STACK_HOLDER}}": bidi_prefix + holder_name + bidi_suffix,
+                        "{{POSITION}}": bidi_prefix + position + bidi_suffix,
+                        "{{BODY_TEXT}}": bidi_prefix + full_body + bidi_suffix,
                         "{{SENDER}}": sender_value,
                         "{{SENDER_TOP}}": sender_top,
                         "{{ESSIC}}": "",
                         "{{HUEED}}": "",
-                "{{CSED}}": "",
                         "{{CSED}}": "",
                         "{{AIE}}": "",
-                    }, remove_manager_sig=remove_manager, tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes)
+                    }, remove_manager_sig=remove_manager, tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes,
+                    remove_header_table=remove_header_table, table_values_align=table_values_align)
 
                     # Cleanup temp image files
                     for p in temp_image_files:
@@ -1358,8 +1366,16 @@ def preview_document():
             sender = remove_office_code(sender)
             default_sender = remove_office_code(default_sender)
 
+            remove_header_table = request.form.get("remove_header_table") == "1"
+            table_values_align = request.form.get("table_values_align", "left").strip().lower()
+            if table_values_align not in ['left', 'right', 'auto']:
+                table_values_align = 'left'
+
+            bidi_prefix = "\u202B" if table_values_align == 'right' else ""
+            bidi_suffix = "\u202C" if table_values_align == 'right' else ""
+
             sender_value = ""
-            sender_top = f"\u202B{sender}\u202C" if sender else f"\u202B{default_sender}\u202C"
+            sender_top = f"{bidi_prefix}{sender}{bidi_suffix}" if sender else f"{bidi_prefix}{default_sender}{bidi_suffix}"
             if is_internal and not manager_is_sender and sender:
                 sender_value = f"\u202Bمقدمه لسيادتكم\n{sender}\u202C"
 
@@ -1409,18 +1425,19 @@ def preview_document():
 
             replace_placeholders(upload_path, temp_docx_path, {
                 "{{CODE_NUMBER}}": full_code,
-                "{{SEND_TO}}": ("\u202B" + normalize_recipient(recipient) + "\u202C") if recipient else "",
-                "{{SUBJECT}}": "\u202B" + subject + "\u202C",
-                "{{STACK_HOLDER}}": "\u202B" + holder_name + "\u202C",
-                "{{POSITION}}": "\u202B" + position + "\u202C",
-                "{{BODY_TEXT}}": "\u202B" + full_body + "\u202C",
+                "{{SEND_TO}}": (bidi_prefix + normalize_recipient(recipient) + bidi_suffix) if recipient else "",
+                "{{SUBJECT}}": bidi_prefix + subject + bidi_suffix,
+                "{{STACK_HOLDER}}": bidi_prefix + holder_name + bidi_suffix,
+                "{{POSITION}}": bidi_prefix + position + bidi_suffix,
+                "{{BODY_TEXT}}": bidi_prefix + full_body + bidi_suffix,
                 "{{SENDER}}": sender_value,
                 "{{SENDER_TOP}}": sender_top,
                 "{{ESSIC}}": "",
                 "{{HUEED}}": "",
                 "{{CSED}}": "",
                 "{{AIE}}": "",
-            }, remove_manager_sig=(is_internal and not manager_is_sender), tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes)
+            }, remove_manager_sig=(is_internal and not manager_is_sender), tables_data=tables_data, image_paths=image_paths, image_sizes=image_sizes,
+            remove_header_table=remove_header_table, table_values_align=table_values_align)
 
             # Cleanup temp image files used for preview
             for p in temp_image_files:
@@ -1653,8 +1670,16 @@ def edit(doc_id):
                 body_to_use = remove_office_code(doc.generated_body or "")
                 default_sender = remove_office_code(default_sender)
 
+                remove_header_table = request.form.get("remove_header_table") == "1"
+                table_values_align = request.form.get("table_values_align", "left").strip().lower()
+                if table_values_align not in ['left', 'right', 'auto']:
+                    table_values_align = 'left'
+
+                bidi_prefix = "\u202B" if table_values_align == 'right' else ""
+                bidi_suffix = "\u202C" if table_values_align == 'right' else ""
+
                 sender_value = ""
-                sender_top = f"\u202B{doc.sender}\u202C" if doc.sender else f"\u202B{default_sender}\u202C"
+                sender_top = f"{bidi_prefix}{doc.sender}{bidi_suffix}" if doc.sender else f"{bidi_prefix}{default_sender}{bidi_suffix}"
                 if doc.is_internal and not doc.manager_is_sender and doc.sender:
                     sender_value = f"\u202Bمقدمه لسيادتكم\n{doc.sender}\u202C"
 
@@ -1667,18 +1692,19 @@ def edit(doc_id):
 
                 replace_placeholders(tmpl_path, new_generated_path, {
                     "{{CODE_NUMBER}}": new_full_code,
-                    "{{SEND_TO}}": ("\u202B" + normalize_recipient(doc.recipient) + "\u202C") if doc.recipient else "",
-                    "{{SUBJECT}}": "\u202B" + doc.subject + "\u202C",
-                    "{{STACK_HOLDER}}": "\u202B" + (doc.holder_name or "") + "\u202C",
-                    "{{POSITION}}": "\u202B" + (doc.position or "") + "\u202C",
+                    "{{SEND_TO}}": (bidi_prefix + normalize_recipient(doc.recipient) + bidi_suffix) if doc.recipient else "",
+                    "{{SUBJECT}}": bidi_prefix + doc.subject + bidi_suffix,
+                    "{{STACK_HOLDER}}": bidi_prefix + (doc.holder_name or "") + bidi_suffix,
+                    "{{POSITION}}": bidi_prefix + (doc.position or "") + bidi_suffix,
                     "{{BODY_TEXT}}": body_to_use or "",
                     "{{SENDER}}": sender_value,
                     "{{SENDER_TOP}}": sender_top,
                     "{{ESSIC}}": "",
                     "{{HUEED}}": "",
-                "{{CSED}}": "",
+                    "{{CSED}}": "",
                     "{{AIE}}": "",
-                }, remove_manager_sig=(doc.is_internal and not doc.manager_is_sender))
+                }, remove_manager_sig=(doc.is_internal and not doc.manager_is_sender),
+                remove_header_table=remove_header_table, table_values_align=table_values_align)
             else:
                 from services.word_editor import replace_placeholder, update_code_in_docx
                 replace_placeholder(upload_path, new_generated_path, new_full_code)

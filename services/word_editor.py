@@ -76,6 +76,14 @@ def apply_p_dir_and_align(paragraph, direction='rtl', alignment='right'):
     pPr.insert_element_before(bidi, 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
     pPr.insert_element_before(jc, 'w:rPr', 'w:sectPr')
 
+    # 3. Ensure paragraph mark formatting (w:pPr/w:rPr) matches direction
+    rPr = pPr.find(qn('w:rPr'))
+    if rPr is not None:
+        for rtl_el in rPr.findall(qn('w:rtl')):
+            rPr.remove(rtl_el)
+        if dir_norm == 'rtl':
+            rPr.append(parse_xml(f'<w:rtl {nsdecls("w")} w:val="1"/>'))
+
 
 def apply_run_rtl_and_lang(run, is_rtl=True):
     """Ensures run has proper w:rtl, w:lang, and w:rFonts properties for Arabic/English."""
@@ -147,7 +155,7 @@ def _replace_in_header_footer(section_part, replacement: str):
         _replace_in_table(table, replacement)
 
 
-def replace_placeholder(input_path: str, output_path: str, replacement: str):
+def replace_placeholder(input_path: str, output_path: str, replacement: str, table_values_align: str = 'left'):
     """
     Opens a .docx file, replaces all occurrences of {{CODE_NUMBER}} with
     the provided replacement string, and saves to output_path.
@@ -202,12 +210,12 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str):
         _replace_in_header_footer(section.first_page_footer, replacement)
 
     if is_vice_dean_doc:
-        clean_vice_dean_tables(doc)
+        clean_vice_dean_tables(doc, table_values_align=table_values_align)
 
     doc.save(output_path)
 
 
-def process_reserve_document(input_path: str, output_path: str, full_code: str):
+def process_reserve_document(input_path: str, output_path: str, full_code: str, table_values_align: str = 'left'):
     """
     Opens a .docx template when reserving a serial number.
     Replaces {{CODE_NUMBER}} with full_code.
@@ -296,7 +304,7 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str):
                     _process_t(t)
 
     if is_vice_dean_doc:
-        clean_vice_dean_tables(doc)
+        clean_vice_dean_tables(doc, table_values_align=table_values_align)
 
     doc.save(output_path)
 
@@ -398,22 +406,31 @@ def format_vice_dean_code_paragraph(paragraph, full_text=None):
     return True
 
 
-def clean_vice_dean_tables(doc):
+def clean_vice_dean_tables(doc, table_values_align: str = 'left'):
     """
     Cleans up Vice Dean document tables to ensure:
     1. No blue shading (cadfff) or white borders in Table 0, Table 1, Table 2.
-    2. Table 1 values (Column 0: Sender, Recipient, Subject) are right-aligned (RTL)
+    2. Table 1 values (Column 0: Sender, Recipient, Subject) alignment is configurable (default: left)
        and colored in gold (#AD8934), with any blue font (081F5C) or underlines removed.
     3. Paragraph 1 (Code paragraph) has No. X & Date in deep blue (#002060) and ENG.CSED in gold (#AD8934).
     """
+    val_align = (table_values_align or 'left').lower()
+
     for t_idx, t in enumerate(doc.tables):
         tblPr = t._element.tblPr
         shd = tblPr.find(qn('w:shd'))
         if shd is not None:
             tblPr.remove(shd)
-        
+
+        # Check if table is metadata table (الراسل, المرسل إليه, الموضوع)
+        is_metadata_tbl = False
+        if len(t.rows) == 3 and len(t.columns) == 2:
+            t_text_clean = re.sub(r'[\u0640\s\u200e\u200f\u202a-\u202e\:\：]', '', ' '.join(c.text for r in t.rows for c in r.cells))
+            if any(k in t_text_clean for k in ['الراسل', 'المرسل', 'SENDER_TOP', 'SEND_TO', 'SUBJECT', 'الموضوع']):
+                is_metadata_tbl = True
+
         # Table 0 (Header/Logo) and Table 2 (Signature) should have nil borders
-        if t_idx in (0, 2):
+        if not is_metadata_tbl:
             bdr = tblPr.find(qn('w:tblBorders'))
             if bdr is not None:
                 tblPr.remove(bdr)
@@ -438,7 +455,7 @@ def clean_vice_dean_tables(doc):
                     if tcBdr is not None:
                         tcPr.remove(tcBdr)
 
-        elif t_idx == 1 and len(t.rows) == 3 and len(t.columns) == 2:
+        elif is_metadata_tbl:
             # Table 1: Metadata table (الراسل, المرسل إليه, الموضوع)
             bdr = tblPr.find(qn('w:tblBorders'))
             if bdr is not None:
@@ -484,10 +501,25 @@ def clean_vice_dean_tables(doc):
                     )
                     tcPr.append(new_tcBdr)
 
-                    # Ensure both columns are right-aligned (RTL)
-                    for p in cell.paragraphs:
-                        apply_p_dir_and_align(p, 'rtl', 'right')
-                        if c_idx == 0:
+                    if c_idx == 1:
+                        # Label column: always right-aligned (RTL)
+                        for p in cell.paragraphs:
+                            apply_p_dir_and_align(p, 'rtl', 'right')
+                    else:
+                        # Value column: configurable alignment (default: left)
+                        for p in cell.paragraphs:
+                            if val_align == 'right':
+                                apply_p_dir_and_align(p, 'rtl', 'right')
+                            elif val_align == 'left':
+                                apply_p_dir_and_align(p, 'ltr', 'left')
+                            else: # 'auto'
+                                p_txt = p.text
+                                has_ar = bool(re.search(r'[\u0600-\u06FF]', p_txt))
+                                if has_ar:
+                                    apply_p_dir_and_align(p, 'rtl', 'right')
+                                else:
+                                    apply_p_dir_and_align(p, 'ltr', 'left')
+
                             # Value column: set font color to gold (#AD8934) and remove underline/blue
                             for r in p.runs:
                                 r.font.color.rgb = RGBColor(0xAD, 0x89, 0x34)
@@ -503,7 +535,10 @@ def clean_vice_dean_tables(doc):
                                         rPr.remove(child)
                                 w14_fill = parse_xml('<w14:textFill xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w14:solidFill><w14:srgbClr w14:val="AD8934"/></w14:solidFill></w14:textFill>')
                                 rPr.append(w14_fill)
-                                apply_run_rtl_and_lang(r, is_rtl=True)
+                                if val_align == 'right':
+                                    apply_run_rtl_and_lang(r, is_rtl=True)
+                                elif val_align == 'left':
+                                    apply_run_rtl_and_lang(r, is_rtl=False)
 
     # Style code paragraph: No. X and Date in deep blue (#002060), ENG.CSED in gold (#AD8934)
     for p in doc.paragraphs[:5]:
@@ -513,16 +548,31 @@ def clean_vice_dean_tables(doc):
                 break
 
 
-def replace_placeholders(input_path: str, output_path: str, replacements: dict, remove_manager_sig: bool = False, tables_data: list = None, image_paths: list = None, table_data: list = None, image_sizes: list = None, **kwargs):
+def replace_placeholders(input_path: str, output_path: str, replacements: dict, remove_manager_sig: bool = False, tables_data: list = None, image_paths: list = None, table_data: list = None, image_sizes: list = None, remove_header_table: bool = False, table_values_align: str = 'left', **kwargs):
     """
     Opens a .docx file, replaces multiple occurrences of keys in `replacements` dict
     with their corresponding values, and saves to output_path.
     If remove_manager_sig is True, it removes the hardcoded manager signature lines.
+    If remove_header_table is True, it removes the metadata table (الراسل/المرسل إليه/الموضوع).
+    table_values_align controls the alignment of values inside the metadata table ('left', 'right', 'auto').
     """
     if tables_data is None and table_data is not None:
         tables_data = table_data
 
     doc = Document(input_path)
+
+    # Option to remove metadata header table completely
+    if remove_header_table:
+        tables_to_remove = []
+        for t in doc.tables:
+            if len(t.rows) == 3 and len(t.columns) == 2:
+                t_text_clean = re.sub(r'[\u0640\s\u200e\u200f\u202a-\u202e\:\：]', '', ' '.join(c.text for r in t.rows for c in r.cells))
+                if any(k in t_text_clean for k in ['الراسل', 'المرسل', 'SENDER_TOP', 'SEND_TO', 'SUBJECT', 'الموضوع']):
+                    tables_to_remove.append(t)
+        for t in tables_to_remove:
+            parent = t._element.getparent()
+            if parent is not None:
+                parent.remove(t._element)
 
     # Guard against text writing over the bottom-left decorative shape in the Vice Dean (HUEED) template.
     # The shape rises up ~150-180 pt from the bottom edge; ensure bottom margin is at least 160 pt.
@@ -1276,8 +1326,24 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                 for bv in tblPr[0].xpath('w:bidiVisual'):
                     tblPr[0].remove(bv)
                 for r in table.rows:
-                    for c in r.cells:
-                        for p in c.paragraphs:
+                    if len(r.cells) >= 2:
+                        val_cell = r.cells[0]
+                        lbl_cell = r.cells[1]
+                        for p in val_cell.paragraphs:
+                            if table_values_align == 'right':
+                                apply_p_dir_and_align(p, 'rtl', 'right')
+                                for run in p.runs:
+                                    apply_run_rtl_and_lang(run, is_rtl=True)
+                            elif table_values_align == 'left':
+                                apply_p_dir_and_align(p, 'ltr', 'left')
+                                for run in p.runs:
+                                    apply_run_rtl_and_lang(run, is_rtl=False)
+                            else: # 'auto'
+                                has_ar = bool(re.search(r'[\u0600-\u06FF]', p.text))
+                                apply_p_dir_and_align(p, 'rtl' if has_ar else 'ltr', 'right' if has_ar else 'left')
+                                for run in p.runs:
+                                    apply_run_rtl_and_lang(run, is_rtl=has_ar)
+                        for p in lbl_cell.paragraphs:
                             apply_p_dir_and_align(p, 'rtl', 'right')
                             for run in p.runs:
                                 apply_run_rtl_and_lang(run, is_rtl=True)
@@ -1296,7 +1362,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         _replace_in_hf(section.first_page_footer)
 
     if is_vice_dean_doc:
-        clean_vice_dean_tables(doc)
+        clean_vice_dean_tables(doc, table_values_align=table_values_align)
 
     doc.save(output_path)
 

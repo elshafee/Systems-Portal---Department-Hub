@@ -174,6 +174,31 @@
                 </label>
               </div>
             </div>
+
+            <div class="form-check mb-2" style="padding-right: 0;">
+              <input class="form-check-input float-end ms-2" type="checkbox" name="remove_header_table" id="edit_remove_header_table" value="1">
+              <label class="form-check-label" for="edit_remove_header_table" style="font-weight:600;color:#0f2744;font-size:13px; margin-right: 1.5rem;">
+                <i class="bi bi-table text-primary me-1"></i> إزالة جدول الترويسة واستخدام القالب بدونه (بدون الراسل / المرسل إليه / الموضوع)
+              </label>
+            </div>
+
+            <div class="mb-3 p-2 bg-light rounded border" id="edit-table-align-group" style="text-align: right; border-color:#e2e8f0 !important;">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <label class="form-label mb-0" style="font-weight:600;color:#0f2744;font-size:12px;">
+                  <i class="bi bi-text-left me-1 text-primary"></i> محاذاة قيم جدول الترويسة:
+                </label>
+                <div class="d-flex gap-3 align-items-center">
+                  <div class="form-check form-check-inline m-0">
+                    <input class="form-check-input" type="radio" name="table_values_align" id="edit_tbl_align_left" value="left" checked>
+                    <label class="form-check-label ms-1 small" for="edit_tbl_align_left" style="font-weight:600;">يسار (Left / LTR)</label>
+                  </div>
+                  <div class="form-check form-check-inline m-0">
+                    <input class="form-check-input" type="radio" name="table_values_align" id="edit_tbl_align_right" value="right">
+                    <label class="form-check-label ms-1 small" for="edit_tbl_align_right" style="font-weight:600;">يمين (Right / RTL)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <hr style="margin: 24px 0; border-color: #e2e8f0;">
@@ -557,6 +582,17 @@
           saveCurrentSelection();
           syncEditorToHidden();
         }, 10);
+      });
+    }
+
+    const rmTableEditChk = document.getElementById('edit_remove_header_table');
+    if (rmTableEditChk) {
+      rmTableEditChk.addEventListener('change', function() {
+        const grp = document.getElementById('edit-table-align-group');
+        if (grp) {
+          grp.style.opacity = this.checked ? '0.4' : '1';
+          grp.style.pointerEvents = this.checked ? 'none' : 'auto';
+        }
       });
     }
   });
