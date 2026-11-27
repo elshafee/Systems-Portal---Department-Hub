@@ -52,24 +52,14 @@ def apply_p_dir_and_align(paragraph, direction='rtl', alignment='right'):
     bidi_val = '1' if dir_norm == 'rtl' else '0'
     bidi = parse_xml(f'<w:bidi {nsdecls("w")} w:val="{bidi_val}"/>')
     
-    if dir_norm == 'rtl':
-        if align_norm in ('both', 'justify'):
-            jc_val = 'both'
-        elif align_norm == 'center':
-            jc_val = 'center'
-        elif align_norm == 'left':
-            jc_val = 'right'  # In Word RTL bidi, right is physical left
-        else: # 'right' or default for RTL
-            jc_val = 'left'   # In Word RTL bidi, left is physical right (leading margin)
-    else:
-        if align_norm in ('both', 'justify'):
-            jc_val = 'both'
-        elif align_norm == 'center':
-            jc_val = 'center'
-        elif align_norm == 'right':
-            jc_val = 'right'
-        else:
-            jc_val = 'left'
+    if align_norm in ('both', 'justify'):
+        jc_val = 'both'
+    elif align_norm == 'center':
+        jc_val = 'center'
+    elif align_norm == 'left':
+        jc_val = 'left'
+    else: # 'right' or default for RTL
+        jc_val = 'right'
             
     jc = parse_xml(f'<w:jc {nsdecls("w")} w:val="{jc_val}"/>')
     
@@ -179,8 +169,8 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str, tab
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(55)
-            s.footer_distance = Pt(45)
+            s.bottom_margin = Pt(65)
+            s.footer_distance = Pt(40)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
             if not pPr.xpath('w:pBdr/w:top'):
@@ -238,8 +228,8 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(55)
-            s.footer_distance = Pt(45)
+            s.bottom_margin = Pt(65)
+            s.footer_distance = Pt(40)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
             if not pPr.xpath('w:pBdr/w:top'):
@@ -451,7 +441,7 @@ def enhance_signature_table(table):
                     if old.tag.endswith(('spacing', 'keepNext')):
                         pPr.remove(old)
                 kn = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-                sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="500" w:after="40" w:line="276" w:lineRule="auto"/>')
+                sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="360" w:after="20" w:line="240" w:lineRule="auto"/>')
                 pPr.insert_element_before(kn, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
                 pPr.insert_element_before(sp, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
             elif len(paragraphs) >= 2:
@@ -461,9 +451,9 @@ def enhance_signature_table(table):
                 for old in list(pPr_top):
                     if old.tag.endswith(('spacing', 'keepNext')):
                         pPr_top.remove(old)
-                # 500 dxa = 25 pt = ~1.0 cm ample space on top of the signature block for signing and stamping while fitting on 1 page
+                # 360 dxa = 18 pt = ~0.65 cm ample space on top of the signature block for signing and stamping while fitting on 1 page in Word Online
                 kn_top = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-                sp_top = parse_xml(f'<w:spacing {nsdecls("w")} w:before="500" w:after="40" w:line="276" w:lineRule="auto"/>')
+                sp_top = parse_xml(f'<w:spacing {nsdecls("w")} w:before="360" w:after="20" w:line="240" w:lineRule="auto"/>')
                 pPr_top.insert_element_before(kn_top, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
                 pPr_top.insert_element_before(sp_top, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
@@ -474,17 +464,17 @@ def enhance_signature_table(table):
                         if old.tag.endswith(('spacing', 'keepNext')):
                             pPr_mid.remove(old)
                     kn_mid = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-                    sp_mid = parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>')
+                    sp_mid = parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="20" w:line="240" w:lineRule="auto"/>')
                     pPr_mid.insert_element_before(kn_mid, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
                     pPr_mid.insert_element_before(sp_mid, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
-                # 3. Last paragraph (Person Name): directly attached right under the title (no gap, tightly bonded)
+                # 3. Last paragraph (Person Name): directly attached right under the title (no gap, Option 1)
                 p_name = paragraphs[-1]
                 pPr_name = p_name._p.get_or_add_pPr()
                 for old in list(pPr_name):
                     if old.tag.endswith(('spacing', 'keepNext')):
                         pPr_name.remove(old)
-                sp_name = parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>')
+                sp_name = parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="20" w:line="240" w:lineRule="auto"/>')
                 pPr_name.insert_element_before(sp_name, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
 
@@ -684,7 +674,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         paras_to_remove = []
         for p in doc.paragraphs[:10]:
             p_text = p.text
-            if 'STACK_HOLDER' in p_text or 'عناية' in p_text or 'POSITION' in p_text or 'يسعدنا أن نتقدم إلى سيادتكم بخالص التحية والتقدير' in p_text:
+            if any(k in p_text for k in ['STACK_HOLDER', 'عناية', 'POSITION', 'تحية طيبة', 'يسعدنا أن نتقدم إلى سيادتكم بخالص التحية والتقدير']):
                 paras_to_remove.append(p)
         for p in paras_to_remove:
             parent = p._element.getparent()
@@ -719,8 +709,8 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(55)
-            s.footer_distance = Pt(45)
+            s.bottom_margin = Pt(65)
+            s.footer_distance = Pt(40)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
             if not pPr.xpath('w:pBdr/w:top'):
@@ -1067,6 +1057,10 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                     parser._flush_paragraph()
                     
                     parsed_paragraphs = parser.paragraphs
+                    total_body_words = len(clean_full_text.split())
+                    is_dense_body = len(parsed_paragraphs) > 4 or total_body_words > 140
+                    body_sz = '25' if is_dense_body else '28'  # 12.5 pt vs 14 pt
+                    body_pt = Pt(12.5) if is_dense_body else Pt(14)
                     
                     # Save base run properties from the very first run, if any
                     base_rPr = None
@@ -1101,14 +1095,17 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
 
                         heading_level = p_data.get('heading_level', 0)
                         if heading_level == 1:
-                            fmt.space_before = Pt(6)
-                            fmt.space_after = Pt(3)
+                            fmt.space_before = Pt(3) if is_dense_body else Pt(6)
+                            fmt.space_after = Pt(1.5) if is_dense_body else Pt(3)
                         elif heading_level == 2:
-                            fmt.space_before = Pt(4)
-                            fmt.space_after = Pt(2)
+                            fmt.space_before = Pt(2) if is_dense_body else Pt(4)
+                            fmt.space_after = Pt(1) if is_dense_body else Pt(2)
                         elif heading_level == 3:
-                            fmt.space_before = Pt(3)
-                            fmt.space_after = Pt(2)
+                            fmt.space_before = Pt(2) if is_dense_body else Pt(3)
+                            fmt.space_after = Pt(1) if is_dense_body else Pt(2)
+                        else:
+                            fmt.space_before = Pt(0)
+                            fmt.space_after = Pt(1.5) if is_dense_body else Pt(2)
 
                         # Set paragraph properties in strict OpenXML schema order:
                         apply_p_dir_and_align(current_p, p_dir, p_align)
@@ -1291,7 +1288,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                 
                                 if heading_level == 1:
                                     run.bold = True
-                                    run.font.size = Pt(16)
+                                    run.font.size = Pt(14) if is_dense_body else Pt(16)
                                     if run_info.get('color'):
                                         r, g, b = run_info['color']
                                         run.font.color.rgb = RGBColor(r, g, b)
@@ -1299,7 +1296,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                         run.font.color.rgb = RGBColor(31, 78, 121)
                                 elif heading_level == 2:
                                     run.bold = True
-                                    run.font.size = Pt(14)
+                                    run.font.size = Pt(13) if is_dense_body else Pt(14)
                                     if run_info.get('color'):
                                         r, g, b = run_info['color']
                                         run.font.color.rgb = RGBColor(r, g, b)
@@ -1307,11 +1304,18 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                         run.font.color.rgb = RGBColor(31, 78, 121)
                                 elif heading_level == 3:
                                     run.bold = True
-                                    run.font.size = Pt(12.5)
+                                    run.font.size = Pt(12) if is_dense_body else Pt(12.5)
                                     if run_info.get('color'):
                                         r, g, b = run_info['color']
                                         run.font.color.rgb = RGBColor(r, g, b)
                                 else:
+                                    run.font.size = body_pt
+                                    rPr = run._element.get_or_add_rPr()
+                                    for child in list(rPr):
+                                        if child.tag.endswith(('sz', 'szCs')):
+                                            rPr.remove(child)
+                                    rPr.append(parse_xml(f'<w:sz {nsdecls("w")} w:val="{body_sz}"/>'))
+                                    rPr.append(parse_xml(f'<w:szCs {nsdecls("w")} w:val="{body_sz}"/>'))
                                     if run_info.get('bold'):
                                         run.bold = True
                                     if run_info.get('italic'):
