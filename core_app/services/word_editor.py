@@ -52,14 +52,24 @@ def apply_p_dir_and_align(paragraph, direction='rtl', alignment='right'):
     bidi_val = '1' if dir_norm == 'rtl' else '0'
     bidi = parse_xml(f'<w:bidi {nsdecls("w")} w:val="{bidi_val}"/>')
     
-    if align_norm in ('both', 'justify'):
-        jc_val = 'both'
-    elif align_norm == 'center':
-        jc_val = 'center'
-    elif align_norm == 'left':
-        jc_val = 'left'
-    else: # 'right' or default for RTL
-        jc_val = 'right'
+    if dir_norm == 'rtl':
+        if align_norm in ('both', 'justify'):
+            jc_val = 'both'
+        elif align_norm == 'center':
+            jc_val = 'center'
+        elif align_norm == 'left':
+            jc_val = 'right'  # In Word RTL bidi, right is physical left
+        else: # 'right' or default for RTL
+            jc_val = 'left'   # In Word RTL bidi, left is physical right (leading margin)
+    else:
+        if align_norm in ('both', 'justify'):
+            jc_val = 'both'
+        elif align_norm == 'center':
+            jc_val = 'center'
+        elif align_norm == 'right':
+            jc_val = 'right'
+        else:
+            jc_val = 'left'
             
     jc = parse_xml(f'<w:jc {nsdecls("w")} w:val="{jc_val}"/>')
     
@@ -852,7 +862,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                                     has_arabic = bool(re.search(r'[\u0600-\u06FF]', p_text))
                                     final_dir = 'rtl' if has_arabic else self.current_dir
                                     final_align = self.current_align
-                                    if has_arabic and final_align not in ('center', 'both', 'justify', 'left'):
+                                    if has_arabic and final_align not in ('center', 'both', 'justify'):
                                         final_align = 'right'
                                     self.paragraphs.append({
                                         'runs': runs_to_flush,
