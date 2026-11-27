@@ -346,12 +346,12 @@
                                         </label>
                                         <div class="d-flex gap-3 align-items-center">
                                             <div class="form-check form-check-inline m-0">
-                                                <input class="form-check-input" type="radio" name="table_values_align" id="tbl_align_left" value="left" checked>
-                                                <label class="form-check-label ms-1 small" for="tbl_align_left" style="font-weight:600;">يسار (Left / LTR)</label>
+                                                <input class="form-check-input" type="radio" name="table_values_align" id="tbl_align_right" value="right" checked>
+                                                <label class="form-check-label ms-1 small" for="tbl_align_right" style="font-weight:600;">يمين (Right / RTL)</label>
                                             </div>
                                             <div class="form-check form-check-inline m-0">
-                                                <input class="form-check-input" type="radio" name="table_values_align" id="tbl_align_right" value="right">
-                                                <label class="form-check-label ms-1 small" for="tbl_align_right" style="font-weight:600;">يمين (Right / RTL)</label>
+                                                <input class="form-check-input" type="radio" name="table_values_align" id="tbl_align_left" value="left">
+                                                <label class="form-check-label ms-1 small" for="tbl_align_left" style="font-weight:600;">يسار (Left / LTR)</label>
                                             </div>
                                         </div>
                                     </div>
@@ -2002,7 +2002,7 @@
         }
 
         const alignRadio = form.querySelector('[name="table_values_align"]:checked');
-        const alignVal = alignRadio ? alignRadio.value : 'left';
+        const alignVal = alignRadio ? alignRadio.value : 'right';
         ['preview-sender', 'preview-recipient', 'preview-subject'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {

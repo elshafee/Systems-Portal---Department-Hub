@@ -687,9 +687,9 @@ def index():
                     default_sender = remove_office_code(default_sender)
 
                     remove_header_table = request.form.get("remove_header_table") == "1"
-                    table_values_align = request.form.get("table_values_align", "left").strip().lower()
+                    table_values_align = request.form.get("table_values_align", "right").strip().lower()
                     if table_values_align not in ['left', 'right', 'auto']:
-                        table_values_align = 'left'
+                        table_values_align = 'right'
 
                     bidi_prefix = "\u202B" if table_values_align == 'right' else ""
                     bidi_suffix = "\u202C" if table_values_align == 'right' else ""
@@ -1367,9 +1367,9 @@ def preview_document():
             default_sender = remove_office_code(default_sender)
 
             remove_header_table = request.form.get("remove_header_table") == "1"
-            table_values_align = request.form.get("table_values_align", "left").strip().lower()
+            table_values_align = request.form.get("table_values_align", "right").strip().lower()
             if table_values_align not in ['left', 'right', 'auto']:
-                table_values_align = 'left'
+                table_values_align = 'right'
 
             bidi_prefix = "\u202B" if table_values_align == 'right' else ""
             bidi_suffix = "\u202C" if table_values_align == 'right' else ""
@@ -1671,9 +1671,9 @@ def edit(doc_id):
                 default_sender = remove_office_code(default_sender)
 
                 remove_header_table = request.form.get("remove_header_table") == "1"
-                table_values_align = request.form.get("table_values_align", "left").strip().lower()
+                table_values_align = request.form.get("table_values_align", "right").strip().lower()
                 if table_values_align not in ['left', 'right', 'auto']:
-                    table_values_align = 'left'
+                    table_values_align = 'right'
 
                 bidi_prefix = "\u202B" if table_values_align == 'right' else ""
                 bidi_suffix = "\u202C" if table_values_align == 'right' else ""

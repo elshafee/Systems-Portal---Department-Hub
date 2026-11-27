@@ -192,12 +192,12 @@
                   </label>
                   <div class="d-flex gap-3 align-items-center">
                     <div class="form-check form-check-inline m-0">
-                      <input class="form-check-input" type="radio" name="table_values_align" id="edit_tbl_align_left" value="left" checked>
-                      <label class="form-check-label ms-1 small" for="edit_tbl_align_left" style="font-weight:600;">يسار (Left / LTR)</label>
+                      <input class="form-check-input" type="radio" name="table_values_align" id="edit_tbl_align_right" value="right" {% if not doc or not doc.table_values_align or doc.table_values_align == 'right' %}checked{% endif %}>
+                      <label class="form-check-label ms-1 small" for="edit_tbl_align_right" style="font-weight:600;">يمين (Right / RTL)</label>
                     </div>
                     <div class="form-check form-check-inline m-0">
-                      <input class="form-check-input" type="radio" name="table_values_align" id="edit_tbl_align_right" value="right">
-                      <label class="form-check-label ms-1 small" for="edit_tbl_align_right" style="font-weight:600;">يمين (Right / RTL)</label>
+                      <input class="form-check-input" type="radio" name="table_values_align" id="edit_tbl_align_left" value="left" {% if doc and doc.table_values_align == 'left' %}checked{% endif %}>
+                      <label class="form-check-label ms-1 small" for="edit_tbl_align_left" style="font-weight:600;">يسار (Left / LTR)</label>
                     </div>
                   </div>
                 </div>

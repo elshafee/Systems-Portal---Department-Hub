@@ -155,7 +155,7 @@ def _replace_in_header_footer(section_part, replacement: str):
         _replace_in_table(table, replacement)
 
 
-def replace_placeholder(input_path: str, output_path: str, replacement: str, table_values_align: str = 'left'):
+def replace_placeholder(input_path: str, output_path: str, replacement: str, table_values_align: str = 'right'):
     """
     Opens a .docx file, replaces all occurrences of {{CODE_NUMBER}} with
     the provided replacement string, and saves to output_path.
@@ -179,7 +179,7 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str, tab
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(125)
+            s.bottom_margin = Pt(80)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -214,7 +214,7 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str, tab
     doc.save(output_path)
 
 
-def process_reserve_document(input_path: str, output_path: str, full_code: str, table_values_align: str = 'left'):
+def process_reserve_document(input_path: str, output_path: str, full_code: str, table_values_align: str = 'right'):
     """
     Opens a .docx template when reserving a serial number.
     Replaces {{CODE_NUMBER}} with full_code.
@@ -238,7 +238,7 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(125)
+            s.bottom_margin = Pt(80)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -409,9 +409,9 @@ def enhance_signature_table(table):
     Enhances the signature table layout:
     1. Ensures w:bidiVisual is applied so the signature column (col 1) is physically on the LEFT in RTL documents.
     2. Applies w:cantSplit to table row(s) to prevent breaking across page boundaries.
-    3. Adds cell top breathing space (w:tcMar top="300" / 15 pt).
-    4. Sets generous space_before="1440" (72 pt / ~2.8-3.0 cm) ON TOP of the signature block (above job title)
-       specifically to provide ample space for physical pen signature and official stamp.
+    3. Adds cell top breathing space (w:tcMar top="160" / 8 pt).
+    4. Sets generous space_before="1080" (54 pt / ~1.9 cm) ON TOP of the signature block (above job title)
+       specifically to provide ample space for physical pen signature and official stamp while keeping 1-page fit.
     5. Keeps the person's name directly attached below the job title with no gap (space_before="0").
     6. Any intermediate title paragraphs get clean spacing and w:keepNext.
     """
@@ -450,50 +450,56 @@ def enhance_signature_table(table):
             if len(paragraphs) == 1:
                 p = paragraphs[0]
                 pPr = p._p.get_or_add_pPr()
-                sp = pPr.find(qn('w:spacing'))
-                if sp is not None:
-                    pPr.remove(sp)
-                pPr.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="1440" w:after="40" w:line="276" w:lineRule="auto"/>'))
+                for old in list(pPr):
+                    if old.tag.endswith(('spacing', 'keepNext')):
+                        pPr.remove(old)
+                kn = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
+                sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="1080" w:after="40" w:line="276" w:lineRule="auto"/>')
+                pPr.insert_element_before(kn, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
+                pPr.insert_element_before(sp, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
             elif len(paragraphs) >= 2:
                 # 1. Top paragraph (Job Title): generous space ON TOP of the signature block for physical pen signature & official stamp
                 p_top = paragraphs[0]
                 pPr_top = p_top._p.get_or_add_pPr()
-                sp_top = pPr_top.find(qn('w:spacing'))
-                if sp_top is not None:
-                    pPr_top.remove(sp_top)
-                # 1440 dxa = 72 pt = ~2.8-3.0 cm ample space on top of the signature block for signing and stamping
-                pPr_top.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="1440" w:after="40" w:line="276" w:lineRule="auto"/>'))
-                if not pPr_top.xpath('w:keepNext'):
-                    pPr_top.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
+                for old in list(pPr_top):
+                    if old.tag.endswith(('spacing', 'keepNext')):
+                        pPr_top.remove(old)
+                # 1080 dxa = 54 pt = ~1.9 cm ample space on top of the signature block for signing and stamping without spilling page
+                kn_top = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
+                sp_top = parse_xml(f'<w:spacing {nsdecls("w")} w:before="1080" w:after="40" w:line="276" w:lineRule="auto"/>')
+                pPr_top.insert_element_before(kn_top, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
+                pPr_top.insert_element_before(sp_top, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
                 # 2. Middle paragraphs (if multiple titles like in ESSIC): directly attached below
                 for p_mid in paragraphs[1:-1]:
                     pPr_mid = p_mid._p.get_or_add_pPr()
-                    sp_mid = pPr_mid.find(qn('w:spacing'))
-                    if sp_mid is not None:
-                        pPr_mid.remove(sp_mid)
-                    pPr_mid.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>'))
-                    if not pPr_mid.xpath('w:keepNext'):
-                        pPr_mid.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
+                    for old in list(pPr_mid):
+                        if old.tag.endswith(('spacing', 'keepNext')):
+                            pPr_mid.remove(old)
+                    kn_mid = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
+                    sp_mid = parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>')
+                    pPr_mid.insert_element_before(kn_mid, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
+                    pPr_mid.insert_element_before(sp_mid, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
                 # 3. Last paragraph (Person Name): directly attached right under the title (no gap, tightly bonded)
                 p_name = paragraphs[-1]
                 pPr_name = p_name._p.get_or_add_pPr()
-                sp_name = pPr_name.find(qn('w:spacing'))
-                if sp_name is not None:
-                    pPr_name.remove(sp_name)
-                pPr_name.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>'))
+                for old in list(pPr_name):
+                    if old.tag.endswith(('spacing', 'keepNext')):
+                        pPr_name.remove(old)
+                sp_name = parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="40" w:line="276" w:lineRule="auto"/>')
+                pPr_name.insert_element_before(sp_name, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
 
-def clean_vice_dean_tables(doc, table_values_align: str = 'left'):
+def clean_vice_dean_tables(doc, table_values_align: str = 'right'):
     """
     Cleans up Vice Dean document tables to ensure:
     1. No blue shading (cadfff) or white borders in Table 0, Table 1, Table 2.
-    2. Table 1 values (Column 0: Sender, Recipient, Subject) alignment is configurable (default: left)
+    2. Table 1 values (Column 0: Sender, Recipient, Subject) alignment is configurable (default: right)
        and colored in gold (#AD8934), with any blue font (081F5C) or underlines removed.
     3. Paragraph 1 (Code paragraph) has No. X & Date in deep blue (#002060) and ENG.CSED in gold (#AD8934).
     """
-    val_align = (table_values_align or 'left').lower()
+    val_align = (table_values_align or 'right').lower()
 
     for t_idx, t in enumerate(doc.tables):
         tblPr = t._element.tblPr
@@ -634,7 +640,7 @@ def clean_vice_dean_tables(doc, table_values_align: str = 'left'):
                 break
 
 
-def replace_placeholders(input_path: str, output_path: str, replacements: dict, remove_manager_sig: bool = False, tables_data: list = None, image_paths: list = None, table_data: list = None, image_sizes: list = None, remove_header_table: bool = False, table_values_align: str = 'left', **kwargs):
+def replace_placeholders(input_path: str, output_path: str, replacements: dict, remove_manager_sig: bool = False, tables_data: list = None, image_paths: list = None, table_data: list = None, image_sizes: list = None, remove_header_table: bool = False, table_values_align: str = 'right', **kwargs):
     """
     Opens a .docx file, replaces multiple occurrences of keys in `replacements` dict
     with their corresponding values, and saves to output_path.
@@ -700,7 +706,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(125)
+            s.bottom_margin = Pt(80)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -1472,19 +1478,26 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
         txt = p.text.strip()
         if any(s in txt for s in salutation_keywords):
             pPr = p._p.get_or_add_pPr()
-            if not pPr.xpath('w:keepNext'):
-                pPr.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
-            sp = pPr.find(qn('w:spacing'))
-            if sp is not None:
-                pPr.remove(sp)
-            pPr.append(parse_xml(f'<w:spacing {nsdecls("w")} w:before="120" w:after="80" w:line="240" w:lineRule="auto"/>'))
+            for old in list(pPr):
+                if old.tag.endswith(('spacing', 'keepNext')):
+                    pPr.remove(old)
+            kn = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
+            sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="80" w:after="40" w:line="240" w:lineRule="auto"/>')
+            pPr.insert_element_before(kn, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
+            pPr.insert_element_before(sp, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
-            # Remove empty paragraph immediately preceding closing salutation if any
-            if idx > 0 and not doc_paras[idx - 1].text.strip():
+            # Also ensure the preceding paragraph stays anchored with salutation so body does not detach
+            if idx > 0:
                 p_prev = doc_paras[idx - 1]
-                parent = p_prev._element.getparent()
-                if parent is not None:
-                    parent.remove(p_prev._element)
+                if not p_prev.text.strip():
+                    parent = p_prev._element.getparent()
+                    if parent is not None:
+                        parent.remove(p_prev._element)
+                else:
+                    pPr_prev = p_prev._p.get_or_add_pPr()
+                    if not pPr_prev.xpath('w:keepNext'):
+                        kn_prev = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
+                        pPr_prev.insert_element_before(kn_prev, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
             break
 
     # If manager signature is active (no employee SENDER text), clean up trailing empty paragraphs between salutation and signature table
