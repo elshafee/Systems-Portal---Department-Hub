@@ -441,7 +441,7 @@ def enhance_signature_table(table):
                     if old.tag.endswith(('spacing', 'keepNext')):
                         pPr.remove(old)
                 kn = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-                sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="360" w:after="20" w:line="240" w:lineRule="auto"/>')
+                sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="680" w:after="20" w:line="240" w:lineRule="auto"/>')
                 pPr.insert_element_before(kn, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
                 pPr.insert_element_before(sp, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
             elif len(paragraphs) >= 2:
@@ -451,9 +451,9 @@ def enhance_signature_table(table):
                 for old in list(pPr_top):
                     if old.tag.endswith(('spacing', 'keepNext')):
                         pPr_top.remove(old)
-                # 360 dxa = 18 pt = ~0.65 cm ample space on top of the signature block for signing and stamping while fitting on 1 page in Word Online
+                # 680 dxa = 34 pt = ~1.2 cm ample dedicated space on top of the signature block for signing and stamping while fitting on 1 page
                 kn_top = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-                sp_top = parse_xml(f'<w:spacing {nsdecls("w")} w:before="360" w:after="20" w:line="240" w:lineRule="auto"/>')
+                sp_top = parse_xml(f'<w:spacing {nsdecls("w")} w:before="680" w:after="20" w:line="240" w:lineRule="auto"/>')
                 pPr_top.insert_element_before(kn_top, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
                 pPr_top.insert_element_before(sp_top, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
@@ -1499,7 +1499,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                 if old.tag.endswith(('spacing', 'keepNext')):
                     pPr.remove(old)
             kn = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-            sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="40" w:after="20" w:line="240" w:lineRule="auto"/>')
+            sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="60" w:after="160" w:line="240" w:lineRule="auto"/>')
             pPr.insert_element_before(kn, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
             pPr.insert_element_before(sp, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
