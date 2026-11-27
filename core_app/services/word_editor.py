@@ -179,7 +179,7 @@ def replace_placeholder(input_path: str, output_path: str, replacement: str, tab
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(80)
+            s.bottom_margin = Pt(55)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -238,7 +238,7 @@ def process_reserve_document(input_path: str, output_path: str, full_code: str, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(80)
+            s.bottom_margin = Pt(55)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -421,6 +421,8 @@ def enhance_signature_table(table):
 
     for r in table.rows:
         trPr = r._tr.get_or_add_trPr()
+        for trh in trPr.xpath('w:trHeight'):
+            trPr.remove(trh)
         if not trPr.xpath('w:cantSplit'):
             trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
 
@@ -434,17 +436,12 @@ def enhance_signature_table(table):
         if sig_cell is not None:
             tcPr = sig_cell._tc.get_or_add_tcPr()
 
-            # Add top margin to cell for breathing space
+            # Add compact cell margins for breathing space without excessive height
             tcMar = tcPr.find(qn('w:tcMar'))
-            if tcMar is None:
-                tcMar = parse_xml(f'<w:tcMar {nsdecls("w")}><w:top w:w="160" w:type="dxa"/><w:bottom w:w="160" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>')
-                tcPr.append(tcMar)
-            else:
-                top_el = tcMar.find(qn('w:top'))
-                if top_el is not None:
-                    top_el.set(qn('w:w'), '160')
-                else:
-                    tcMar.append(parse_xml(f'<w:top {nsdecls("w")} w:w="160" w:type="dxa"/>'))
+            if tcMar is not None:
+                tcPr.remove(tcMar)
+            tcMar = parse_xml(f'<w:tcMar {nsdecls("w")}><w:top w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar>')
+            tcPr.append(tcMar)
 
             paragraphs = sig_cell.paragraphs
             if len(paragraphs) == 1:
@@ -454,7 +451,7 @@ def enhance_signature_table(table):
                     if old.tag.endswith(('spacing', 'keepNext')):
                         pPr.remove(old)
                 kn = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-                sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="1080" w:after="40" w:line="276" w:lineRule="auto"/>')
+                sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="500" w:after="40" w:line="276" w:lineRule="auto"/>')
                 pPr.insert_element_before(kn, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
                 pPr.insert_element_before(sp, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
             elif len(paragraphs) >= 2:
@@ -464,9 +461,9 @@ def enhance_signature_table(table):
                 for old in list(pPr_top):
                     if old.tag.endswith(('spacing', 'keepNext')):
                         pPr_top.remove(old)
-                # 1080 dxa = 54 pt = ~1.9 cm ample space on top of the signature block for signing and stamping without spilling page
+                # 500 dxa = 25 pt = ~1.0 cm ample space on top of the signature block for signing and stamping while fitting on 1 page
                 kn_top = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-                sp_top = parse_xml(f'<w:spacing {nsdecls("w")} w:before="1080" w:after="40" w:line="276" w:lineRule="auto"/>')
+                sp_top = parse_xml(f'<w:spacing {nsdecls("w")} w:before="500" w:after="40" w:line="276" w:lineRule="auto"/>')
                 pPr_top.insert_element_before(kn_top, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
                 pPr_top.insert_element_before(sp_top, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
@@ -565,6 +562,11 @@ def clean_vice_dean_tables(doc, table_values_align: str = 'right'):
             tblPr.append(new_bdr)
 
             for r_idx in range(3):
+                row_el = t.rows[r_idx]._tr
+                trPr = row_el.get_or_add_trPr()
+                for trh in trPr.xpath('w:trHeight'):
+                    trPr.remove(trh)
+                trPr.append(parse_xml(f'<w:trHeight {nsdecls("w")} w:val="360" w:hRule="atLeast"/>'))
                 for c_idx in range(2):
                     cell = t.cell(r_idx, c_idx)
                     tcPr = cell._tc.get_or_add_tcPr()
@@ -574,6 +576,10 @@ def clean_vice_dean_tables(doc, table_values_align: str = 'right'):
                     tcBdr = tcPr.find(qn('w:tcBorders'))
                     if tcBdr is not None:
                         tcPr.remove(tcBdr)
+                    tcMar = tcPr.find(qn('w:tcMar'))
+                    if tcMar is not None:
+                        tcPr.remove(tcMar)
+                    tcPr.append(parse_xml(f'<w:tcMar {nsdecls("w")}><w:top w:w="40" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:left w:w="60" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tcMar>'))
 
                     top_val = 'single' if r_idx == 0 else 'nil'
                     top_color = 'ad8934' if r_idx == 0 else 'auto'
@@ -592,6 +598,13 @@ def clean_vice_dean_tables(doc, table_values_align: str = 'right'):
                         f'</w:tcBorders>'
                     )
                     tcPr.append(new_tcBdr)
+
+                    for p in cell.paragraphs:
+                        pPr = p._p.get_or_add_pPr()
+                        sp = pPr.find(qn('w:spacing'))
+                        if sp is not None:
+                            pPr.remove(sp)
+                        pPr.insert_element_before(parse_xml(f'<w:spacing {nsdecls("w")} w:before="0" w:after="20" w:line="240" w:lineRule="auto"/>'), 'w:ind', 'w:jc', 'w:rPr')
 
                     if c_idx == 1:
                         # Label column: always right-aligned (RTL)
@@ -706,7 +719,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                         break
     if is_vice_dean_doc:
         for s in doc.sections:
-            s.bottom_margin = Pt(80)
+            s.bottom_margin = Pt(55)
             s.footer_distance = Pt(45)
             footer_p = s.footer.paragraphs[0] if s.footer.paragraphs else s.footer.add_paragraph()
             pPr = footer_p._element.get_or_add_pPr()
@@ -1482,7 +1495,7 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                 if old.tag.endswith(('spacing', 'keepNext')):
                     pPr.remove(old)
             kn = parse_xml(f'<w:keepNext {nsdecls("w")}/>')
-            sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="80" w:after="40" w:line="240" w:lineRule="auto"/>')
+            sp = parse_xml(f'<w:spacing {nsdecls("w")} w:before="40" w:after="20" w:line="240" w:lineRule="auto"/>')
             pPr.insert_element_before(kn, 'w:keepLines', 'w:pageBreakBefore', 'w:framePr', 'w:widowControl', 'w:numPr', 'w:pBdr', 'w:shd', 'w:tabs', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
             pPr.insert_element_before(sp, 'w:ind', 'w:jc', 'w:rPr', 'w:sectPr')
 
@@ -1516,6 +1529,13 @@ def replace_placeholders(input_path: str, output_path: str, replacements: dict, 
                     break
         for ep in empty_paras_to_remove:
             ep._element.getparent().remove(ep._element)
+
+    # Clean up any remaining stray empty paragraphs in the body to avoid wasting vertical space
+    for p in list(doc.paragraphs):
+        if not p.text.strip():
+            parent = p._element.getparent()
+            if parent is not None:
+                parent.remove(p._element)
 
     for section in doc.sections:
         _replace_in_hf(section.header)
